@@ -1,0 +1,32 @@
+kmeans on 2 dimensions:
+1 cluster with 23 observations overlapping with 1 cluster with 15 observations
+1 cluster with 2 observations: beef and lamb
+1 cluster with 3 observations: coffee, dark chocolate, beef (dairy herd), but with beef closer to lamb
+
+kmeans on three dimensions:
+3 clusters still overlap
+1 cluster with 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43: coffee, dark chocolate, beef (beef and dairy herd), lamb, pig meat, poultry meat, milk, cheese, eggs, fish (farmed), shrimps (farmed) --> looks like it grouped all animal products. -> better fit than before!
+
+kmeans on tsne dimensions to visualize better:
+
+1 cluster with: 1, 2, 7, 12, 21, 24, 25, 26, 27, 28, 29, 30, 31, 33
+wheat (bread), maize (meal), cassava, nuts, tomatoes, brassicas, other vegetables, citrus fruit, bananas, apples, berries and grapes, wine, other fruits, dark chocolate (closer to number 32 in the last cluster)
+By looking at the means of the variables (cluster 3), this group looks like the least polluting one for all the variables considered (all negative values).
+
+1 cluster with: 3, 8, 9, 14, 15, 39
+barley (beer), cane sugar, beet sugar, soymilk, tofu, milk.
+cluster 2: they have the highest means in transport and retail, while all other variables are negative.
+
+1 cluster with: 4, 5, 6, 10, 11, 13, 22, 23, 41
+oatmeal, rice, potatoes, other pulses, peas, groundnuts, onions and leeks, root vegetables, eggs
+cluster 4: share very similar values with cluster 3, but even less polluting in land use, transport, eutrophication, gas emissions.
+
+1 cluster with: 16, 17, 18, 19, 20, 32, 34, 35, 36, 37, 38, 40, 42, 43
+soybean oil, palm oil, sunflower oil, coffee, beef (beef and dairy), lamb and mutton, pig meat, poultry, cheese, fish (farmed), shrimps (farmed).
+cluster 1: positive values in all the variables, some even relatively high (animal feed, farm, processing, packaging, eutrophication are all above 0.75).
+
+Hierarchical with ward linkage
+cluster 1 contains almost all data points: looking at the means, it seems like the one that pollutes the least (nearly all negative values).
+cluster 2 (32, 33: coffee and dark chocolate): high values for packaging, eutrophication, gas emissions; low value fos liters consumption 
+cluster 3(43, 36: beef (beef herd) and lamb & mutton): positive values for all variables except for transport and packaging: quite polluting.
+cluster 4 (35, 37, 38, 40, 42, 43: beef (dairy herd), pig meat, poultry meat, cheese,fish (farmed), shrimps (farmed)): very high values in land use, farm, processing, total emissions. 
