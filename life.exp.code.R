@@ -8,21 +8,25 @@ library(factoextra)
 # ===============
 # CLEANING THE DATASET
 # ===============
-plot_graphs <- FALSE
-data_cleaning_result <- source("Modules/Data_Cleaning.R")$value
+plot_cleaning_graphs <- FALSE
+data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$value
 cleaned_data <- data_cleaning_result$cleaned_data
 
 --------------------------------------------------------------------------------
 # UNSUPERVISED LEARNING
 --------------------------------------------------------------------------------
+# ==========
+# PCA
+# ==========
+plot_pca_graphs <- FALSE
+pca_analysis_result <- source("Modules/Analysis_PCA.R")$value
 
 # ===========
 # K_MEANS CLUSTERING
 # ===========
-
 wss <- numeric(10)  
 for (k in 1:10) {
-  wss[k] <- sum(kmeans(num_vars_scaled, centers = k, nstart = 25)$withinss)
+  wss[k] <- sum(kmeans(cleaned_data[,-1], centers = k, nstart = 25)$withinss)
 }
 
 # Plot
@@ -33,23 +37,19 @@ plot(1:10, wss, type="b", pch=19, frame=FALSE,
 
 set.seed(123)  
 k_opt <- 4
-km_model <- kmeans(num_vars_scaled, centers = k_opt, nstart = 25)
+km_model <- kmeans(cleaned_data[,-1], centers = k_opt, nstart = 25)
 
-scaled_lifeexp$Cluster <- as.factor(km_model$cluster)
-table(scaled_lifeexp$Cluster)
+cleaned_data$kcluster_pca <- as.factor(km_model$cluster)
+table(cleaned_data$kcluster_pca)
 
 # Means of clusters
-cluster_means <- aggregate(num_vars, by = list(Cluster = km_model$cluster), mean)
-print(cluster_means)
-scaled_lifeexp$Cluster_PCA <- as.factor(km_model$cluster)  
-
+pca_kcluster_means <- aggregate(cleaned_data[,-c(1, ncol(cleaned_data))], by = list(kcluster_pca = km_model$cluster), mean)
+print(pca_kcluster_means)
 
 # =============
 # PCA calculation
 # =============
-pca_result <- prcomp(num_vars_scaled, scale = TRUE)
-pca_data <- data.frame(PC1 = pca_result$x[,1], PC2 = pca_result$x[,2], Cluster = scaled_lifeexp$Cluster)
-pca_data$Country <- life_expectancy_dataset$Country
+pca_data <- data.frame(Country = cleaned_data$Country, Cluster = cleaned_data$kcluster_pca, PC1 = pca_result$x[,1], PC2 = pca_result$x[,2], PC3 = pca_result$x[,3])
 
 # Cluster plot
 ggplot(pca_data, aes(x = PC1, y = PC2, color = Cluster)) +
@@ -58,17 +58,9 @@ ggplot(pca_data, aes(x = PC1, y = PC2, color = Cluster)) +
   theme_minimal() +
   labs(title = "K-Means Clustering Visualization", x = "Principal Component 1", y = "Principal Component 2")
 
-# Check the weights of variables on components
-pca_result$rotation
-
-# Loadings for PC1 and PC2 (these are the "arrows")
-loadings <- as.data.frame(pca_result$rotation[, 1:2])
-loadings$Variable <- rownames(loadings)
-
-# Scaling factor for arrows (aesthetics)
+# Plot with loadings
 arrow_scale <- 3.5
 
-# Plot with arrows
 ggplot(pca_data, aes(x = PC1, y = PC2, color = Cluster)) +
   geom_point(data = pca_data, aes(x = PC1, y = PC2, color = Cluster), size = 3) +
   geom_text_repel(data = pca_data, aes(x = PC1, y = PC2, label = Country), size = 3) +
@@ -110,13 +102,6 @@ expectancy in various Word Countries.
 
 "I want to try and plot a 3D graph to explain more variance."
 
-
-# Add a third dimension to the plot
-pca_data$PC3 <- pca_result$x[,3]
-loadings_3d <- as.data.frame(pca_result$rotation[, 1:3])
-loadings_3d$Variable <- rownames(loadings_3d)
-
-
 # 3D graph
 fig <- plot_ly(
   data = pca_data,
@@ -153,36 +138,24 @@ fig <- plot_ly(
         showgrid = TRUE,
         gridcolor = "lightgray"
       ),
-      bgcolor = "white"  # Sfondo bianco per una visualizzazione più chiara
+      bgcolor = "white" 
     )
   )
 
 fig
 
-# Show Variables loadings on a 3d plot
-
-# Extract variable coordinates (loadings)
-var_coords <- as.data.frame(pca_result$rotation[, 1:3])  # First 3 components
-colnames(var_coords) <- c("Dim1", "Dim2", "Dim3")
-
-# Optional: scale for better visualization
-arrow_scale <- 3
-var_coords$Dim1 <- var_coords$Dim1 * arrow_scale
-var_coords$Dim2 <- var_coords$Dim2 * arrow_scale
-var_coords$Dim3 <- var_coords$Dim3 * arrow_scale
-
 # Create 3D PCA variable plot (loadings as arrows)
 PCA_plot_3d <- plot_ly()
 
-for (i in 1:nrow(var_coords)) {
+for (i in 1:nrow(loadings)) {
   PCA_plot_3d <- PCA_plot_3d %>%
     add_trace(
       type = "scatter3d",
       mode = "lines+text",
-      x = c(0, var_coords$Dim1[i]),
-      y = c(0, var_coords$Dim2[i]),
-      z = c(0, var_coords$Dim3[i]),
-      text = c("", rownames(var_coords)[i]),
+      x = c(0, loadings$PC1[i]),
+      y = c(0, loadings$PC2[i]),
+      z = c(0, loadings$PC3[i]),
+      text = c("", rownames(loadings)[i]),
       textposition = "top center",
       textfont = list(color = "#e6550d", size = 12),
       line = list(color = "orange", width = 4),

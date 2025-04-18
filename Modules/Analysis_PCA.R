@@ -5,7 +5,7 @@ library(plotly)
 if (!exists("plot_pca_graphs")) plot_pca_graphs <- FALSE
 
 # 1. PCA
-pca_result <- prcomp(cleaned_data[,-1], scale = TRUE)
+pca_result <- prcomp(cleaned_data[,-1], scale. = TRUE)
 
 # 2. Loadings
 loadings <- as.data.frame(pca_result$rotation[, 1:3])
