@@ -8,6 +8,11 @@ library(factoextra)
 # ===============
 # CLEANING THE DATASET
 # ===============
+plot_graphs <- FALSE
+data_cleaning_result <- source("Modules/Data_Cleaning.R")$value
+cleaned_data <- data_cleaning_result$cleaned_data
+
+
 life_expectancy_dataset <- read.csv("life.expectancy.csv")
 str(life_expectancy_dataset)
 
@@ -87,15 +92,14 @@ print(high_corr_df)
 vars_to_drop <- c("infant_deaths", "diphtheria", "thinness5_9years", "inc_composition")
 scaled_lifeexp <- scaled_lifeexp[, !(names(scaled_lifeexp) %in% vars_to_drop)]
 
-
-# ===============
+--------------------------------------------------------------------------------
 # UNSUPERVISED LEARNING
-# ===============
+--------------------------------------------------------------------------------
 
 # ===========
 # K_MEANS CLUSTERING
 # ===========
-# Choose number of clusters
+
 wss <- numeric(10)  
 for (k in 1:10) {
   wss[k] <- sum(kmeans(num_vars_scaled, centers = k, nstart = 25)$withinss)
