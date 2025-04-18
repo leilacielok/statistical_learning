@@ -5,46 +5,50 @@ library(dplyr)
 library(cluster)
 library(factoextra)
 
-#############
-
-# Import the dataset
+# ===============
+# Cleaning the dataset
+# ===============
 life_expectancy_dataset <- read.csv("life.expectancy.csv")
 str(life_expectancy_dataset)
 
-# Fix character variables GDPpc and population
+# Fix character variables
 life_expectancy_dataset <- life_expectancy_dataset %>%
   mutate_at(vars(GDPpc, pop, hepatitisB, diphtheria, polio, deaths_under_five, 
                  measles, adult_mortality, infant_deaths), 
             ~ as.numeric(gsub(",", "", .)))
 
-
 # Substitute NA with variable mean
 life_expectancy_dataset <- data.frame(lapply(life_expectancy_dataset, function(x) ifelse(is.na(x), mean(x, na.rm = TRUE), x)))
 
 
-## DESCRIPTIVE STATISTICS
+# =============
+# DESCRIPTIVE ANALYSIS
+# =============
 head(life_expectancy_dataset)
 summary(life_expectancy_dataset[, 3:20]) 
 
-# Check normality (all variables)
+# Check normality
 qqnorm(life_expectancy_dataset$life_expectancy)
 qqline(life_expectancy_dataset$life_expectancy, col="blue")
-shapiro.test(life_expectancy_dataset$life_expectancy)
+shapiro.test(life_expectancy_dataset$life_expectancy)library(e1071)
 
 # Histograms
 par(mfrow=c(4,5))  
 for(i in 3:20) {
   hist(life_expectancy_dataset[, i], main=names(life_expectancy_dataset)[i], col="lightblue")
 }
-par(mfrow=c(1,1))  # Reset layout
+par(mfrow=c(1,1))  
 
-
-## Transform skewed variables in logarithms 
-skewed_vars <- c("GDPpc", "pop", "AIDS", "hepatitisB", "measles", "infant_deaths", "thinness10_19years", "thinness5_9years")  # Sostituisci con le tue variabili skewed
-str(skewed_vars)
-
-for (var in skewed_vars) {
-  life_expectancy_dataset[[var]] <- log1p(life_expectancy_dataset[[var]])  # Applica log(1 + x)
+# Logarithmic transformation of skewed variables 
+library(e1071)
+skew_vals <- sapply(life_expectancy_dataset[3:20], skewness)
+print(skew_vals)
+skewed_pos <- names(skew_vals[skew_vals > 1])
+skewed_neg <- names(skew_vals[skew_vals < -1])
+for (var in skewed_pos) {
+  life_expectancy_dataset[[var]] <- log1p(life_expectancy_dataset[[var]])} 
+for (var in skewed_neg) {
+  life_expectancy_dataset[[var]] <- log1p(max(life_expectancy_dataset[[var]], na.rm = TRUE) + 1 - life_expectancy_dataset[[var]])
 }
 
 # Standardize the data
@@ -59,30 +63,21 @@ scaled_lifeexp <- cbind(
 # Encode Status in a dummy
 scaled_lifeexp$Status <- ifelse(life_expectancy_dataset$Status == "Developed", 1, 0)
 
-# Verify correlation between variables to avoid multi-collinearity
-scaled_lifeexp <- scaled_lifeexp[, -1]
-corr_matrix <- cor(scaled_lifeexp)
+# Verify correlation between variables to avoid multicollinearity
+corr_matrix <- cor(scaled_lifeexp[, -1])
 heatmap(corr_matrix, 
           main="Correlation map", 
           cex.main=0.8, 
           cexRow=0.6, 
           cexCol=0.6, 
-          lwd=0.5,   # line width
+          lwd=0.5,   
           trace="none", 
-          sepwidth=c(0.01, 0.01), # Shortens the lines
+          sepwidth=c(0.01, 0.01), 
           colsep=1:ncol(corr_matrix), 
           rowsep=1:nrow(corr_matrix),
           srtCol=45,
           srtRow=45)
 
-# Alternative visualization
-# === Heatmap of correlations ===
-library(corrplot)
-num_vars <- model_data[, sapply(model_data, is.numeric)]
-corr_matrix <- cor(num_vars)
-corrplot(corr_matrix, method = "color", type = "lower",
-         tl.cex = 0.8, tl.col = "black", addCoef.col = "black",
-         title = "Correlation Heatmap", mar = c(0,0,1,0))
 # ===============
 # UNSUPERVISED LEARNING
 # ===============
@@ -112,7 +107,7 @@ table(scaled_lifeexp$Cluster)
 # Means of clusters
 cluster_means <- aggregate(num_vars, by = list(Cluster = km_model$cluster), mean)
 print(cluster_means)
-scaled_lifeexp$Cluster <- as.factor(km_model$cluster)  
+scaled_lifeexp$Cluster_PCA <- as.factor(km_model$cluster)  
 
 
 # =============
@@ -129,7 +124,6 @@ ggplot(pca_data, aes(x = PC1, y = PC2, color = Cluster)) +
   theme_minimal() +
   labs(title = "K-Means Clustering Visualization", x = "Principal Component 1", y = "Principal Component 2")
 
----------------------------------------------------------------------------------
 # Check the weights of variables on components
 pca_result$rotation
 
@@ -302,8 +296,105 @@ Negative side (more distinct):thinness_5_9_years, thinness_1_19_years, diphtheri
 Interpretation: PC3 may distinguish nutritional health and immunization patterns 
 in a population — with high negative values suggesting greater challenges in those areas.
 "
----------------------------------
+--------------------------------------------------------------------------------
+# =============
+# TSNE
+# =============
+library(Rtsne)
 
+set.seed(42)
+tsne_result <- Rtsne(num_vars_scaled, dims = 2, perplexity = 30, verbose = TRUE, max_iter = 500)
+
+# Create a dataframe with results
+tsne_data <- data.frame(
+  X = tsne_result$Y[, 1],
+  Y = tsne_result$Y[, 2],
+  Cluster = scaled_lifeexp$Cluster,
+  Country = life_expectancy_dataset$Country
+)
+
+# Plot with country labels
+ggplot(tsne_data, aes(x = X, y = Y, color = Cluster)) +
+  geom_point(size = 2, alpha = 0.7) +
+  geom_text_repel(aes(label = Country), size = 3, max.overlaps = 20) +
+  theme_minimal() +
+  labs(
+    title = "t-SNE Visualization of Countries",
+    x = "t-SNE Dimension 1", y = "t-SNE Dimension 2"
+  )
+
+# ==============
+# K-MEANS ON tSNE
+# ==============
+set.seed(123)
+k_tsne <- kmeans(tsne_result$Y, centers = 4)  # or however many clusters you want
+
+tsne_data <- data.frame(
+  X = tsne_result$Y[, 1],
+  Y = tsne_result$Y[, 2],
+  Cluster_tSNE = as.factor(k_tsne$cluster),
+  Country = life_expectancy_dataset$Country
+)
+
+
+## t-SNE Dimensions
+map_tsne <- tsne_data %>%
+  select(Country, Cluster_tSNE)
+world_data_tsne <- left_join(world, map_tsne, by = c("name" = "Country"))
+
+# Plot
+ggplot(data = world_data_tsne) +
+  geom_sf(aes(fill = as.factor(Cluster_tSNE)), color = "white", size = 0.1) +
+  scale_fill_brewer(palette = "Set3", name = "t-SNE Cluster") +
+  theme_minimal() +
+  labs(title = "World Map Colored by t-SNE Clusters",
+       subtitle = "Grouping based on t-SNE of socioeconomic indicators")
+
+
+--------------------------------------------------------------------------------
+# =============
+# World Maps on K-means
+# =============
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(cowplot)
+
+life_expectancy_dataset$Cluster_PCA <- as.factor(km_model$cluster)
+life_expectancy_dataset$Cluster_tSNE <- as.factor(k_tsne$cluster)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+map_data<- life_expectancy_dataset %>%
+  select(Country, Cluster_PCA, Cluster_tSNE)
+
+world_data_pca <- left_join(world, 
+                            life_expectancy_dataset %>% select(Country, Cluster_PCA), 
+                            by = c("name" = "Country"))
+world_data_tsne <- left_join(world, 
+                             life_expectancy_dataset %>% select(Country, Cluster_tSNE), 
+                             by = c("name" = "Country"))
+
+map1 <- ggplot(world_data_pca) +
+  geom_sf(aes(fill = Cluster_PCA), color = "white", size = 0.1) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "PCA Clustering") +
+  theme_minimal()
+
+map2 <- ggplot(world_data_tsne) +
+  geom_sf(aes(fill = Cluster_tSNE), color = "white", size = 0.1) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "t-SNE Clustering") +
+  theme_minimal()
+
+print(map1)
+print(map2)
+
+# See them combined
+map1 <- map1 + theme(legend.position = "none")
+map2 <- map2 + theme(legend.position = "right")
+combined_map <- plot_grid(map1, map2, ncol = 2, rel_widths = c(1, 1))
+print(combined_map)
+
+--------------------------------------------------------------------------------
 # =============
 # HIERARCHICAL CLUSTERING
 # =============
