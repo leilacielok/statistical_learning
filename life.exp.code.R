@@ -1,8 +1,6 @@
-library(ggplot2)
 library(ggrepel)
-library(plotly)
-library(dplyr)
 library(cluster)
+library(Rtsne)
 library(factoextra)
 
 # ===============
@@ -207,8 +205,6 @@ in a population — with high negative values suggesting greater challenges in t
 # =============
 # TSNE
 # =============
-library(Rtsne)
-
 set.seed(42)
 tsne_result <- Rtsne(cleaned_data[,-1], dims = 2, perplexity = 30, verbose = TRUE, max_iter = 500)
 
@@ -233,16 +229,12 @@ ggplot(tsne_data, aes(x = X, y = Y, color = Cluster)) +
 # ==============
 # K-MEANS ON tSNE
 # ==============
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(cowplot)
+
 set.seed(123)
 k_tsne <- kmeans(tsne_result$Y, centers = 4)  # or however many clusters you want
-
-tsne_data <- data.frame(
-  X = tsne_result$Y[, 1],
-  Y = tsne_result$Y[, 2],
-  kcluster_tSNE = as.factor(k_tsne$cluster),
-  Country = cleaned_data$Country
-)
-
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
 ## t-SNE Dimensions
@@ -258,14 +250,10 @@ ggplot(data = world_data_tsne) +
   labs(title = "World Map Colored by t-SNE Clusters",
        subtitle = "Grouping based on t-SNE of socioeconomic indicators")
 
-
 --------------------------------------------------------------------------------
 # =============
 # World Maps on K-means
 # =============
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(cowplot)
 
 map_data<- life_expectancy_dataset %>%
   select(Country, Cluster_PCA, Cluster_tSNE)
@@ -341,27 +329,20 @@ table(ward)
 # With 4 clusters, using the average and complete cluster methods creates a fourth group with only 
 # one observation: try with three clusters
 
-
-## Hierarchical clustering needs a check
-## Add another heatmap
-## Check dimensionality with TSNE
-
 ------------------------------------------------------------------------------------
 # =================== 
 # SUPERVISED LEARNING: predicting Status  ---- remember: remove last three variables (Clusters from scaled)
 # ===================
-
 library(caret)
 library(rpart)
 library(rpart.plot)
 library(randomForest)
 library(nnet)
 
-cleaned_data <- cleaned_data[, !names(cleaned_data) %in% "Country"]
-
-set.seed(123) 
+cleaned_data <- cleaned_data[, !(names(cleaned_data) %in% c("kcluster_pca", "kcluster_tsne"))]
 
 # === Train / Test Split ===
+set.seed(123) 
 split_index <- createDataPartition(cleaned_data[,-1]$Status, p = 0.7, list = FALSE)
 train_data <- cleaned_data[split_index, -1]
 test_data  <- cleaned_data[-split_index, -1]
@@ -383,13 +364,14 @@ print(separation_check)
 library(glmnet)
 
 # Fit logistic regression with LASSO (L1 penalty)
-cv_fit <- cv.glmnet(x, y, family = "binomial", alpha = 1)
+cv_fit <- cv.glmnet(X, y, family = "binomial", alpha = 1) # cross validation to choose robust lambda
 
 # Best model
-best_model <- glmnet(x, y, family = "binomial", alpha = 1, lambda = cv_fit$lambda.min)
+best_model <- glmnet(X, y, family = "binomial", alpha = 1, lambda = cv_fit$lambda.min)
 
-# Check coefficients
-coef(best_model)
+# Check coefficients: those with coefficient 0 are not significant to predict status
+coef_lasso <- coef(best_model)
+coef(best_model)[coef(best_model)[,1] != 0, ] # only see the significant ones
 
 # check on test data
 # Create x_test matrix (must match training features)
@@ -406,38 +388,80 @@ class_pred <- as.factor(class_pred)
 
 # confusion matrix
 confusionMatrix(class_pred, y_test, positive = "1")
+coords(roc_obj, "best", ret = c("threshold", "specificity", "sensitivity"))
 
-# ROC curve
+# ROC + AUC curve: How well the model discriminates classes
 library(pROC)
 
 roc_obj <- roc(y_test, as.numeric(prob_pred))
-plot(roc_obj, col = "blue", main = "ROC Curve")
-auc(roc_obj)
+plot(roc_obj, col = "#1f78b4", lwd = 2, main = "ROC curve - Logistic Regression with LASSO")
+legend("bottomright", legend = paste("AUC =", round(auc(roc_obj), 4)), col = "#1f78b4", lwd = 2)
 
 --------------------------------------------------------------------------------
-logit_model <- glm(Status ~ ., data = train_data, family = binomial)
-summary(logit_model)
+# Visualization of coefficients
+lasso_df <- data.frame(
+  Feature = rownames(coef_lasso),
+  Coefficient = as.numeric(coef_lasso)
+)
+lasso_df <- subset(lasso_df, Coefficient != 0 & Feature != "(Intercept)")
+lasso_df$Model <- "LASSO"
 
-# Predict & evaluate
-logit_probs <- predict(logit_model, newdata = test_data, type = "response")
-logit_pred <- ifelse(logit_probs > 0.5, 1, 0)
+ggplot(coef_df, aes(x = reorder(Feature, Coefficient), y = Coefficient)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "LASSO coefficients",
+       x = "Variable",
+       y = "Coefficient value")
 
-cat("\n=== Logistic Regression ===\n")
-print(table(Predicted = logit_pred, Actual = test_data$Status))
-cat("Accuracy:", mean(logit_pred == test_data$Status), "\n")
-
+--------------------------------------------------------------------------------
 # ===============
 # DECISION TREE
 # ===============
 tree_model <- rpart(Status ~ ., data = train_data, method = "class")
 rpart.plot(tree_model, main = "Decision Tree")
 
-tree_pred <- predict(tree_model, newdata = test_data, type = "class")
+tree_imp <- tree_model$variable.importance
+tree_df <- data.frame(
+  Feature = names(tree_imp),
+  Coefficient = as.numeric(tree_imp),
+  Model = "Decision Tree"
+)
 
-cat("\n=== Decision Tree ===\n")
+tree_pred <- predict(tree_model, newdata = test_data, type = "class")
 print(table(Predicted = tree_pred, Actual = test_data$Status))
 cat("Accuracy:", mean(tree_pred == test_data$Status), "\n")
 
+tree_model_big <- rpart(Status ~ ., data = train_data, method = "class",
+                        control = rpart.control(cp = 0.001, minsplit = 5))
+
+rpart.plot(tree_model_big, main = "Decision Tree (Less Pruned)")
+
+--------------------------------------------------------------------------------
+# ==============
+# Compare the importance of variables between LASSO and decision tree
+# ==============
+combined_df <- bind_rows(lasso_df, tree_df)
+
+combined_df <- combined_df %>%
+  group_by(Model) %>%
+  mutate(Norm_Importance = abs(Coefficient) / max(abs(Coefficient), na.rm = TRUE)) %>%
+  ungroup()
+
+combined_df <- combined_df %>%
+  arrange(Norm_Importance) %>%
+  mutate(Feature = factor(Feature, levels = unique(Feature)))
+
+ggplot(combined_df, aes(Feature, Norm_Importance, y = Norm_Importance, fill = Model)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Compare variables' importance: LASSO vs Decision Tree",
+       x = "Variable",
+       y = "(Standardized) Importance") +
+  scale_fill_manual(values = c("LASSO" = "#0072B2", "Decision Tree" = "orange"))
+
+--------------------------------------------------------------------------------
 # ===============
 # RANDOM FOREST
 # ===============
