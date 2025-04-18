@@ -210,14 +210,14 @@ in a population — with high negative values suggesting greater challenges in t
 library(Rtsne)
 
 set.seed(42)
-tsne_result <- Rtsne(num_vars_scaled, dims = 2, perplexity = 30, verbose = TRUE, max_iter = 500)
+tsne_result <- Rtsne(cleaned_data[,-1], dims = 2, perplexity = 30, verbose = TRUE, max_iter = 500)
 
 # Create a dataframe with results
 tsne_data <- data.frame(
   X = tsne_result$Y[, 1],
   Y = tsne_result$Y[, 2],
-  Cluster = scaled_lifeexp$Cluster,
-  Country = life_expectancy_dataset$Country
+  Cluster = cleaned_data$kcluster_pca,
+  Country = cleaned_data$Country
 )
 
 # Plot with country labels
@@ -239,19 +239,20 @@ k_tsne <- kmeans(tsne_result$Y, centers = 4)  # or however many clusters you wan
 tsne_data <- data.frame(
   X = tsne_result$Y[, 1],
   Y = tsne_result$Y[, 2],
-  Cluster_tSNE = as.factor(k_tsne$cluster),
-  Country = life_expectancy_dataset$Country
+  kcluster_tSNE = as.factor(k_tsne$cluster),
+  Country = cleaned_data$Country
 )
 
+world <- ne_countries(scale = "medium", returnclass = "sf")
 
 ## t-SNE Dimensions
 map_tsne <- tsne_data %>%
-  select(Country, Cluster_tSNE)
+  select(Country, kcluster_tSNE)
 world_data_tsne <- left_join(world, map_tsne, by = c("name" = "Country"))
 
 # Plot
 ggplot(data = world_data_tsne) +
-  geom_sf(aes(fill = as.factor(Cluster_tSNE)), color = "white", size = 0.1) +
+  geom_sf(aes(fill = as.factor(kcluster_tSNE)), color = "white", size = 0.1) +
   scale_fill_brewer(palette = "Set3", name = "t-SNE Cluster") +
   theme_minimal() +
   labs(title = "World Map Colored by t-SNE Clusters",
@@ -266,10 +267,6 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(cowplot)
 
-life_expectancy_dataset$Cluster_PCA <- as.factor(km_model$cluster)
-life_expectancy_dataset$Cluster_tSNE <- as.factor(k_tsne$cluster)
-
-world <- ne_countries(scale = "medium", returnclass = "sf")
 map_data<- life_expectancy_dataset %>%
   select(Country, Cluster_PCA, Cluster_tSNE)
 
@@ -309,13 +306,13 @@ print(combined_map)
 # Build the dendograms for each method
 
 #Average, Complete, Ward linkage plot
-h1<-hclust(dist(scaled_lifeexp), method="average")
+h1<-hclust(dist(cleaned_data), method="average")
 rect.hclust(h1, 4)
 
-h2<-hclust(dist(scaled_lifeexp), method="complete")
+h2<-hclust(dist(cleaned_data), method="complete")
 rect.hclust(h2, 4)
 
-h3<-hclust(dist(scaled_lifeexp), method="ward.D2")
+h3<-hclust(dist(cleaned_data), method="ward.D2")
 rect.hclust(h3, 4)
 
 # Try with 4 clusters 
@@ -360,19 +357,64 @@ library(rpart.plot)
 library(randomForest)
 library(nnet)
 
-scaled_lifeexp <- scaled_lifeexp[, !names(scaled_lifeexp) %in% "Country"]
+cleaned_data <- cleaned_data[, !names(cleaned_data) %in% "Country"]
 
 set.seed(123) 
 
 # === Train / Test Split ===
-split_index <- createDataPartition(scaled_lifeexp$Status, p = 0.7, list = FALSE)
-train_data <- scaled_lifeexp[split_index, ]
-test_data  <- scaled_lifeexp[-split_index, ]
+split_index <- createDataPartition(cleaned_data[,-1]$Status, p = 0.7, list = FALSE)
+train_data <- cleaned_data[split_index, -1]
+test_data  <- cleaned_data[-split_index, -1]
 
 
 # ================
 # LOGISTIC REGRESSION
 # ================
+
+# 1. Check separation 
+library(detectseparation)
+X <- model.matrix(Status ~ ., data = train_data)[, -1]  # remove intercept column
+y <- as.factor(train_data$Status)
+
+separation_check <- detect_separation(x = X, y = y, family = binomial())
+print(separation_check)
+
+# To avoid separation problems: 
+library(glmnet)
+
+# Fit logistic regression with LASSO (L1 penalty)
+cv_fit <- cv.glmnet(x, y, family = "binomial", alpha = 1)
+
+# Best model
+best_model <- glmnet(x, y, family = "binomial", alpha = 1, lambda = cv_fit$lambda.min)
+
+# Check coefficients
+coef(best_model)
+
+# check on test data
+# Create x_test matrix (must match training features)
+x_test <- model.matrix(Status ~ ., test_data)[, -1]  # Remove intercept
+# Get true labels
+y_test <- as.factor(test_data$Status)
+
+# Predict probabilities
+prob_pred <- predict(best_model, newx = x_test, type = "response")
+
+# Classify with threshold 0.5
+class_pred <- ifelse(prob_pred >= 0.5, 1, 0)
+class_pred <- as.factor(class_pred)
+
+# confusion matrix
+confusionMatrix(class_pred, y_test, positive = "1")
+
+# ROC curve
+library(pROC)
+
+roc_obj <- roc(y_test, as.numeric(prob_pred))
+plot(roc_obj, col = "blue", main = "ROC Curve")
+auc(roc_obj)
+
+--------------------------------------------------------------------------------
 logit_model <- glm(Status ~ ., data = train_data, family = binomial)
 summary(logit_model)
 
