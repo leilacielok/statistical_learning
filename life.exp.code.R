@@ -6,7 +6,7 @@ library(cluster)
 library(factoextra)
 
 # ===============
-# Cleaning the dataset
+# CLEANING THE DATASET
 # ===============
 life_expectancy_dataset <- read.csv("life.expectancy.csv")
 str(life_expectancy_dataset)
@@ -20,10 +20,6 @@ life_expectancy_dataset <- life_expectancy_dataset %>%
 # Substitute NA with variable mean
 life_expectancy_dataset <- data.frame(lapply(life_expectancy_dataset, function(x) ifelse(is.na(x), mean(x, na.rm = TRUE), x)))
 
-
-# =============
-# DESCRIPTIVE ANALYSIS
-# =============
 head(life_expectancy_dataset)
 summary(life_expectancy_dataset[, 3:20]) 
 
@@ -32,7 +28,7 @@ qqnorm(life_expectancy_dataset$life_expectancy)
 qqline(life_expectancy_dataset$life_expectancy, col="blue")
 shapiro.test(life_expectancy_dataset$life_expectancy)library(e1071)
 
-# Histograms
+# Histograms: variables' distributions
 par(mfrow=c(4,5))  
 for(i in 3:20) {
   hist(life_expectancy_dataset[, i], main=names(life_expectancy_dataset)[i], col="lightblue")
@@ -60,10 +56,10 @@ scaled_lifeexp <- cbind(
   as.data.frame(num_vars_scaled)
 )
 
-# Encode Status in a dummy
+# Add dummy Status 
 scaled_lifeexp$Status <- ifelse(life_expectancy_dataset$Status == "Developed", 1, 0)
 
-# Verify correlation between variables to avoid multicollinearity
+# Handle multicollinearity
 corr_matrix <- cor(scaled_lifeexp[, -1])
 heatmap(corr_matrix, 
           main="Correlation map", 
