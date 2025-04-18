@@ -2,7 +2,7 @@ library(plotly)
 library(dplyr)
 library(e1071)
 
-if (!exists("plot_graphs")) plot_graphs <- FALSE
+if (!exists("plot_cleaning_graphs")) plot_cleaning_graphs <- FALSE
 
 # 1. Import the dataset
 life_expectancy_dataset <- read.csv("life.expectancy.csv")
@@ -57,7 +57,7 @@ vars_to_drop <- c("infant_deaths", "diphtheria", "thinness5_9years", "inc_compos
 scaled_lifeexp_final <- scaled_lifeexp[, !(names(scaled_lifeexp) %in% vars_to_drop)]
 
 # 8. Graphs: do not print them when the module is called
-if (plot_graphs) {
+if (plot_cleaning_graphs) {
   library(gplots)
   
   # Check normality: QQ plot and normality test
