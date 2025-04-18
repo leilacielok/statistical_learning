@@ -1,3 +1,8 @@
+library(ggplot2)
+library(ggrepel)
+library(plotly)
+library(dplyr)
+
 # ===============
 # Cleaning the dataset
 # ===============

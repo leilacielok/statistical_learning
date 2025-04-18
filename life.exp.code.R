@@ -78,6 +78,20 @@ heatmap(corr_matrix,
           srtCol=45,
           srtRow=45)
 
+# Drop correlated variables
+high_corr_pairs <- which(abs(corr_matrix) >= 0.9 & abs(corr_matrix) < 1, arr.ind = TRUE)
+high_corr_df <- data.frame(
+  Var1 = rownames(corr_matrix)[high_corr_pairs[, 1]],
+  Var2 = colnames(corr_matrix)[high_corr_pairs[, 2]],
+  Correlation = corr_matrix[high_corr_pairs]
+)
+high_corr_df <- high_corr_df[high_corr_df$Var1 < high_corr_df$Var2, ]
+print(high_corr_df)
+
+vars_to_drop <- c("infant_deaths", "diphtheria", "thinness5_9years", "inc_composition")
+scaled_lifeexp <- scaled_lifeexp[, !(names(scaled_lifeexp) %in% vars_to_drop)]
+
+
 # ===============
 # UNSUPERVISED LEARNING
 # ===============
