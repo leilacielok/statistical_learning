@@ -1,6 +1,4 @@
-library(ggrepel)
 library(cluster)
-library(Rtsne)
 library(factoextra)
 
 # ===============
@@ -18,6 +16,15 @@ cleaned_data <- data_cleaning_result$cleaned_data
 # ==========
 plot_pca_graphs <- FALSE
 pca_analysis_result <- source("Modules/Analysis_PCA.R")$value
+pca_result <- pca_analysis_result$pca_result
+pca_loadings <- pca_analysis_result$loadings
+
+# ==========
+# t-SNE
+# ==========
+plot_tsne_graphs <- FALSE
+tsne_analysis_result <- source("Modules/Analysis_tSNE.R")$value
+tsne_result <- tsne_analysis_result$tsne_result
 
 # ===========
 # K_MEANS CLUSTERING
@@ -45,12 +52,41 @@ pca_kcluster_means <- aggregate(cleaned_data[,-c(1, ncol(cleaned_data))], by = l
 print(pca_kcluster_means)
 
 # =============
-# PCA calculation
+# K-means on PCA
 # =============
-pca_data <- data.frame(Country = cleaned_data$Country, Cluster = cleaned_data$kcluster_pca, PC1 = pca_result$x[,1], PC2 = pca_result$x[,2], PC3 = pca_result$x[,3])
+pca_data <- data.frame(
+  Country = cleaned_data$Country, 
+  kcluster_pca = cleaned_data$kcluster_pca,
+  X = pca_result$x[, 1],
+  Y = pca_result$x[, 2]
+)
+
+library(countrycode)
+# country names to match those of world
+pca_data$Country_std <- countrycode(pca_data$Country,
+                                     origin = "country.name",
+                                     destination = "country.name")
+
+# Verify which countries were not identified
+sum(is.na(pca_data$Country_std))
+pca_data %>%
+  filter(is.na(Country_std)) %>%
+  distinct(Country)
+
+pca_data$Country_std <- ifelse(is.na(pca_data$Country_std), pca_data$Country, pca_data$Country_std)
+pca_data$Country_std <- recode(pca_data$Country_std,
+                                "CentralAfricanRepublic" = "Central African Republic",
+                                "DominicanRepublic" = "Dominican Republic",
+                                "LaoPeople'sDemocraticRepublic" = "Lao PDR",
+                                "SaintLucia" = "Saint Lucia",
+                                "SouthAfrica" = "South Africa",
+                                "UnitedStatesofAmerica" = "United States of America"
+)
+
+
 
 # Cluster plot
-ggplot(pca_data, aes(x = PC1, y = PC2, color = Cluster)) +
+ggplot(pca_data, aes(x = X, y = Y, color = kcluster_pca)) +
   geom_point(size = 3) +
   geom_text_repel(aes(label = Country), size = 3) +
   theme_minimal() +
@@ -59,14 +95,14 @@ ggplot(pca_data, aes(x = PC1, y = PC2, color = Cluster)) +
 # Plot with loadings
 arrow_scale <- 3.5
 
-ggplot(pca_data, aes(x = PC1, y = PC2, color = Cluster)) +
-  geom_point(data = pca_data, aes(x = PC1, y = PC2, color = Cluster), size = 3) +
-  geom_text_repel(data = pca_data, aes(x = PC1, y = PC2, label = Country), size = 3) +
-  geom_segment(data = loadings,
+ggplot(pca_data, aes(x = X, y = Y, color = kcluster_pca)) +
+  geom_point(data = pca_data, aes(x = X, y = Y, color = kcluster_pca), size = 3) +
+  geom_text_repel(data = pca_data, aes(x = X, y = Y, label = Country), size = 3) +
+  geom_segment(data = pca_loadings,
                aes(x = 0, y = 0, xend = PC1 * arrow_scale, yend = PC2 * arrow_scale),
                arrow = arrow(length = unit(0.3, "cm")),
                color = "#e6550d", size = 0.7, alpha = 0.9) +
-  geom_text_repel(data = loadings,
+  geom_text_repel(data = pca_loadings,
             aes(x = PC1 * arrow_scale * 1.1, y = PC2 * arrow_scale * 1.1, label = Variable),
             color = "#e6550d", size = 3.5, fontface = "bold") +
   xlab(paste0("PC1 (", round(summary(pca_result)$importance[2,1] * 100, 1), "%)")) +
@@ -100,19 +136,19 @@ expectancy in various Word Countries.
 
 "I want to try and plot a 3D graph to explain more variance."
 
-# 3D graph
+# 3D graph: FIX: ADD THIRD DIMENSION TO PCA_DATA!!!
 fig <- plot_ly(
   data = pca_data,
-  x = ~PC1, y = ~PC2, z = ~PC3,
+  x = ~X, y = ~Y, z = ~PC3,
   type = "scatter3d",
   mode = "markers",
   marker = list(
     size = 6,
     opacity = 0.8  # Rende i punti leggermente trasparenti per evitare sovrapposizioni
   ),
-  color = ~Cluster, 
+  color = ~kcluster_pca, 
   colors = c("red", "green", "blue", "purple"),
-  text = ~paste("Country:", Country, "<br>Cluster:", Cluster),  # Hover con più info
+  text = ~paste("Country:", Country, "<br>Cluster:", kcluster_pca),  # Hover con più info
   hoverinfo = "text"
 ) %>%
   layout(
@@ -145,15 +181,15 @@ fig
 # Create 3D PCA variable plot (loadings as arrows)
 PCA_plot_3d <- plot_ly()
 
-for (i in 1:nrow(loadings)) {
+for (i in 1:nrow(pca_loadings)) {
   PCA_plot_3d <- PCA_plot_3d %>%
     add_trace(
       type = "scatter3d",
       mode = "lines+text",
-      x = c(0, loadings$PC1[i]),
-      y = c(0, loadings$PC2[i]),
-      z = c(0, loadings$PC3[i]),
-      text = c("", rownames(loadings)[i]),
+      x = c(0, pca_loadings$PC1[i]),
+      y = c(0, pca_loadings$PC2[i]),
+      z = c(0, pca_loadings$PC3[i]),
+      text = c("", rownames(pca_loadings)[i]),
       textposition = "top center",
       textfont = list(color = "#e6550d", size = 12),
       line = list(color = "orange", width = 4),
@@ -203,21 +239,22 @@ in a population — with high negative values suggesting greater challenges in t
 "
 --------------------------------------------------------------------------------
 # =============
-# TSNE
+# K-means on TSNE
 # =============
-set.seed(42)
-tsne_result <- Rtsne(cleaned_data[,-1], dims = 2, perplexity = 30, verbose = TRUE, max_iter = 500)
+set.seed(123)
+k_tsne <- kmeans(tsne_result$Y, centers = 4)  
+cleaned_data$kcluster_tsne <- as.factor(k_tsne$cluster)
 
 # Create a dataframe with results
 tsne_data <- data.frame(
+  Country = cleaned_data$Country,
+  kcluster_tsne = cleaned_data$kcluster_tsne,
   X = tsne_result$Y[, 1],
-  Y = tsne_result$Y[, 2],
-  Cluster = cleaned_data$kcluster_pca,
-  Country = cleaned_data$Country
+  Y = tsne_result$Y[, 2]
 )
 
 # Plot with country labels
-ggplot(tsne_data, aes(x = X, y = Y, color = Cluster)) +
+ggplot(tsne_data, aes(x = X, y = Y, color = kcluster_tsne)) +
   geom_point(size = 2, alpha = 0.7) +
   geom_text_repel(aes(label = Country), size = 3, max.overlaps = 20) +
   theme_minimal() +
@@ -227,34 +264,68 @@ ggplot(tsne_data, aes(x = X, y = Y, color = Cluster)) +
   )
 
 # ==============
-# K-MEANS ON tSNE
+# World maps
 # ==============
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(cowplot)
 
-set.seed(123)
-k_tsne <- kmeans(tsne_result$Y, centers = 4)  # or however many clusters you want
 world <- ne_countries(scale = "medium", returnclass = "sf")
+setdiff(pca_data$Country_std, world$name)
+
+library(countrycode)
+# country names to match those of world
+pca_data$Country_std <- countrycode(pca_data$Country,
+                                     origin = "country.name",
+                                     destination = "country.name")
+
+# Verify which countries were not identified
+sum(is.na(pca_data$Country_std))
+pca_data %>%
+  filter(is.na(Country_std)) %>%
+  distinct(Country)
+
+pca_data$Country_std <- ifelse(is.na(pca_data$Country_std), pca_data$Country, pca_data$Country_std)
+pca_data$Country_std <- recode(pca_data$Country_std,
+                                "CentralAfricanRepublic" = "Central African Republic",
+                                "DominicanRepublic" = "Dominican Republic",
+                                "LaoPeople'sDemocraticRepublic" = "Lao PDR",
+                                "SaintLucia" = "Saint Lucia",
+                                "SouthAfrica" = "South Africa",
+                                "UnitedStatesofAmerica" = "United States of America"
+)
+
+tsne_data$Country_std <- pca_data$Country_std
 
 ## t-SNE Dimensions
 map_tsne <- tsne_data %>%
-  select(Country, kcluster_tSNE)
-world_data_tsne <- left_join(world, map_tsne, by = c("name" = "Country"))
+  select(Country_std, kcluster_tsne)
+world_data_tsne <- left_join(world, map_tsne, by = c("name" = "Country_std"))
 
 # Plot
 ggplot(data = world_data_tsne) +
-  geom_sf(aes(fill = as.factor(kcluster_tSNE)), color = "white", size = 0.1) +
+  geom_sf(aes(fill = as.factor(kcluster_tsne)), color = "white", size = 0.1) +
   scale_fill_brewer(palette = "Set3", name = "t-SNE Cluster") +
   theme_minimal() +
   labs(title = "World Map Colored by t-SNE Clusters",
        subtitle = "Grouping based on t-SNE of socioeconomic indicators")
 
+## pca dimensions
+map_pca <- pca_data %>%
+  select(Country_std, kcluster_pca)
+world_data_pca <- left_join(world, map_pca, by = c("name" = "Country_std"))
+
+# Plot
+ggplot(data = world_data_pca) +
+  geom_sf(aes(fill = as.factor(kcluster_pca)), color = "white", size = 0.1) +
+  scale_fill_brewer(palette = "Set3", name = "t-SNE Cluster") +
+  theme_minimal() +
+  labs(title = "World Map Colored by t-SNE Clusters",
+       subtitle = "Grouping based on t-SNE of socioeconomic indicators")
 --------------------------------------------------------------------------------
 # =============
 # World Maps on K-means
 # =============
-
 map_data<- life_expectancy_dataset %>%
   select(Country, Cluster_PCA, Cluster_tSNE)
 
