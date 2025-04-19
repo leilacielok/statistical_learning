@@ -76,8 +76,8 @@ evaluate_model <- function(true_labels, predicted_labels, model_name = "") {
   print(cm)
 }
 
-#-----------------------
-# 6. Data preparation for supervised learning
+# ----------------------
+# 6. Data preparation for supervised learning: variable 'Status'
 # ----------------------
 prepare_status_data <- function(cleaned_data, seed = 123) {
   cleaned_data <- cleaned_data[, !(names(cleaned_data) %in% c("kcluster_pca", "kcluster_tsne", "cluster_avg", "cluster_com", "cluster_ward"))]
@@ -88,6 +88,31 @@ prepare_status_data <- function(cleaned_data, seed = 123) {
   
   train_data <- cleaned_data[split_index, -1] 
   test_data  <- cleaned_data[-split_index, -1]
+  
+  return(list(train = train_data, test = test_data))
+}
+
+# ----------------------
+# Data preparation for supervised learning: variable 'life expectancy', factorized
+prepare_lifeexp_data <- function(cleaned_data, seed = 123) {
+  quantiles <- quantile(cleaned_data$life_expectancy, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE)
+  
+  cleaned_data$lifeexp_cat <- cut(
+    cleaned_data$life_expectancy,
+    breaks = quantiles,
+    labels = c("Low", "Medium", "High"),
+    include.lowest = TRUE
+  )
+  
+  cleaned_data$lifeexp_cat <- factor(cleaned_data$lifeexp_cat, levels = c("Low", "Medium", "High"))
+  cleaned_data <- cleaned_data[, !(names(cleaned_data) %in% c("life_expectancy", "Status", "kcluster_pca", "kcluster_tsne"))]
+  
+  # 3. Train/test split
+  set.seed(seed)
+  split_index <- caret::createDataPartition(cleaned_data$lifeexp_cat, p = 0.7, list = FALSE)
+  
+  train_data <- cleaned_data[split_index, ]
+  test_data  <- cleaned_data[-split_index, ]
   
   return(list(train = train_data, test = test_data))
 }
