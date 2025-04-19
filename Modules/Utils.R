@@ -75,3 +75,20 @@ evaluate_model <- function(true_labels, predicted_labels, model_name = "") {
   cm <- confusionMatrix(predicted_labels, true_labels)
   print(cm)
 }
+
+#-----------------------
+# 6. Data preparation for supervised learning
+# ----------------------
+prepare_status_data <- function(cleaned_data, seed = 123) {
+  cleaned_data <- cleaned_data[, !(names(cleaned_data) %in% c("kcluster_pca", "kcluster_tsne", "cluster_avg", "cluster_com", "cluster_ward"))]
+  
+  # Split dataset
+  set.seed(seed)
+  split_index <- createDataPartition(cleaned_data[,-1]$Status, p = 0.7, list = FALSE)
+  
+  train_data <- cleaned_data[split_index, -1] 
+  test_data  <- cleaned_data[-split_index, -1]
+  
+  return(list(train = train_data, test = test_data))
+}
+

@@ -49,3 +49,29 @@ fviz_dend(hcpc_result, rect = TRUE)
 
 # HCPC clusters 
 fviz_cluster(hcpc_result, repel = TRUE)
+
+--------------------------------------------------------------------------------
+  # SUPERVISED LEARNING
+--------------------------------------------------------------------------------
+# ===============
+# Logistic Regression
+# ===============
+source("Modules/Classification_methods/Logistic.R")
+log_result <- run_status_logistic(cleaned_data)
+log_result$confusion
+plot(log_result$roc)
+
+# ===============
+# Decision Tree
+# ===============
+source("Modules/Classification_methods/DecisionTree.R")
+tree_result <- run_status_tree(cleaned_data)
+rpart.plot(tree_result$model)
+
+# ===============
+# Random Forest
+# ===============
+source("Modules/Classification_methods/RandomForest.R")
+rf_result <- run_status_rf(cleaned_data)
+rf_result$importance_plot()
+
