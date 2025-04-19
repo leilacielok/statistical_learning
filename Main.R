@@ -7,7 +7,7 @@ data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$val
 cleaned_data <- data_cleaning_result$cleaned_data
 
 --------------------------------------------------------------------------------
-  # UNSUPERVISED LEARNING
+  # UNSUPERVISED LEARNING: STATUS VARIABLE
 --------------------------------------------------------------------------------
 # ==========
 # PCA
@@ -75,3 +75,28 @@ source("Modules/Status_classification/RF_status.R")
 rf_result <- run_status_rf(cleaned_data)
 rf_result$importance_plot()
 
+--------------------------------------------------------------------------------
+  # UNSUPERVISED LEARNING: LIFE EXPECTANCY VARIABLE
+--------------------------------------------------------------------------------
+# ===============
+# Logistic
+# ===============
+source("Modules/LifeExp_classification/Logistic_lifeexp.R")
+lifeexp_log <- run_lifeexp_logistic(cleaned_data)
+lifeexp_log$confusion
+
+# ===============
+# Decision Tree
+# ===============
+source("Modules/LifeExp_classification/DC_lifeexp.R")
+lifeexp_tree <- run_lifeexp_tree(cleaned_data)
+rpart.plot(lifeexp_tree$model)
+lifeexp_tree$confusion
+
+# ===============
+# Random Forest
+# ===============
+source("Modules/LifeExp_classification/RF_lifeexp.R")
+lifeexp_rf <- run_lifeexp_rf(cleaned_data)
+lifeexp_rf$confusion
+varImpPlot(lifeexp_rf$model)

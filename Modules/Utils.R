@@ -93,7 +93,8 @@ prepare_status_data <- function(cleaned_data, seed = 123) {
 }
 
 # ----------------------
-# Data preparation for supervised learning: variable 'life expectancy', factorized
+# 7.Data preparation for supervised learning: variable 'life expectancy', factorized
+# ----------------------
 prepare_lifeexp_data <- function(cleaned_data, seed = 123) {
   quantiles <- quantile(cleaned_data$life_expectancy, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE)
   
@@ -105,7 +106,7 @@ prepare_lifeexp_data <- function(cleaned_data, seed = 123) {
   )
   
   cleaned_data$lifeexp_cat <- factor(cleaned_data$lifeexp_cat, levels = c("Low", "Medium", "High"))
-  cleaned_data <- cleaned_data[, !(names(cleaned_data) %in% c("life_expectancy", "Status", "kcluster_pca", "kcluster_tsne"))]
+  cleaned_data <- cleaned_data[, !(names(cleaned_data) %in% c("life_expectancy", "Status", "kcluster_pca", "kcluster_tsne", "Country"))]
   
   # 3. Train/test split
   set.seed(seed)
