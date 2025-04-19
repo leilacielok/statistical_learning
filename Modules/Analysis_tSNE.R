@@ -12,7 +12,6 @@ tsne_result <- Rtsne(cleaned_data[,-1], dims = 2, perplexity = 30, verbose = TRU
 
 # Return useful results
 result <- list(
-  tsne_result = tsne_result,
-)
+  tsne_result = tsne_result)
 
 return(result)
