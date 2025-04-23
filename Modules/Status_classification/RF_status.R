@@ -10,10 +10,11 @@ run_status_rf <- function(cleaned_data) {
   train_data$Status <- factor(train_data$Status, levels = c(0, 1), labels = c("Class0", "Class1"))
   test_data$Status <- factor(test_data$Status, levels = c(0, 1), labels = c("Class0", "Class1"))
   
-  X <- model.matrix(Status ~ ., data = train_data)[, -1]
-  Y <- as.factor(train_data$Status)
-  
-  ctrl <- trainControl(method = "cv", number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+  ctrl <- trainControl(
+    method = "cv", 
+    number = 10, 
+    classProbs = TRUE, 
+    summaryFunction = twoClassSummary)
   
   rf_model_cv <- train(
     Status ~ ., 
@@ -32,8 +33,13 @@ run_status_rf <- function(cleaned_data) {
     Coefficient = as.numeric(importance$importance[, 1])
   )
   
+  pred <- predict(rf_model_cv, newdata = test_data)
+  cm <- confusionMatrix(pred, test_data$Status)
+  
   return(list(
     model = rf_model_cv,
-    important_vars = rf_df
+    confusion = cm,
+    important_vars = rf_df,
+    predictions = pred
   ))
 }

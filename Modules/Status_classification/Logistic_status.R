@@ -1,6 +1,7 @@
 run_status_logistic <- function(cleaned_data) {
   library(glmnet)
   library(detectseparation)
+  library(caret)
 
   source("Modules/Utils.R")
   data_split <- prepare_status_data(cleaned_data)
@@ -21,6 +22,9 @@ run_status_logistic <- function(cleaned_data) {
   prob_pred <- predict(best_model, newx = x_test, type = "response")
   class_pred <- as.factor(ifelse(prob_pred >= 0.5, 1, 0))
   
+  # Confusion Matrix
+  cm <- confusionMatrix(class_pred, y_test)
+  
   # Variables importance
   coef_lasso <- coef(best_model)
   lasso_df <- data.frame(
@@ -30,6 +34,7 @@ run_status_logistic <- function(cleaned_data) {
   
   return(list(
     model = best_model,
+    confusion = cm,
     important_vars = lasso_df
   ))
 }

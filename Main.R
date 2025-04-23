@@ -56,7 +56,6 @@ fviz_cluster(hcpc_result, repel = TRUE)
 # ===============
 # Logistic Regression
 # ===============
-# Result
 source("Modules/Status_classification/Logistic_status.R")
 log_status <- run_status_logistic(cleaned_data)
 
@@ -71,7 +70,6 @@ logit_status_cv <- cross_validate_model(
 # ===============
 # Decision Tree
 # ===============
-# Result
 source("Modules/Status_classification/DT_status.R")
 tree_status <- run_status_tree(cleaned_data)
 rpart.plot(tree_status$model$finalModel)
@@ -85,7 +83,6 @@ tree_status_cv <- cross_validate_model(
 # ===============
 # Random Forest
 # ===============
-# Result
 source("Modules/Status_classification/RF_status.R")
 rf_status <- run_status_rf(cleaned_data)
 
@@ -112,7 +109,6 @@ compare_models_roc(models_list_status, model_names_status)
 # ===============
 source("Modules/LifeExp_classification/Logistic_lifeexp.R")
 log_lifeexp <- run_lifeexp_logistic(cleaned_data)
-log_lifeexp$confusion
 
 # Cross-Validation
 source("Modules/LifeExp_classification/CrossValidation_Lifeexp.R")
@@ -124,10 +120,9 @@ logit_lifeexp_cv <- cross_validate_model(
 # ===============
 # Decision Tree
 # ===============
-source("Modules/LifeExp_classification/DC_lifeexp.R")
+source("Modules/LifeExp_classification/DT_lifeexp.R")
 tree_lifeexp <- run_lifeexp_tree(cleaned_data)
 rpart.plot(tree_lifeexp$model$finalModel)
-tree_lifeexp$confusion
 
 tree_lifeexp_cv <- cross_validate_model(
   data = cleaned_data,
@@ -139,7 +134,6 @@ tree_lifeexp_cv <- cross_validate_model(
 # ===============
 source("Modules/LifeExp_classification/RF_lifeexp.R")
 rf_lifeexp <- run_lifeexp_rf(cleaned_data)
-rf_lifeexp$confusion
 
 rf_lifeexp_cv <- cross_validate_model(
   data = cleaned_data,
