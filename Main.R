@@ -51,29 +51,58 @@ fviz_dend(hcpc_result, rect = TRUE)
 fviz_cluster(hcpc_result, repel = TRUE)
 
 --------------------------------------------------------------------------------
-  # SUPERVISED LEARNING
+  # SUPERVISED LEARNING: Status
 --------------------------------------------------------------------------------
 # ===============
 # Logistic Regression
 # ===============
+# Result
 source("Modules/Status_classification/Logistic_status.R")
 log_result <- run_status_logistic(cleaned_data)
-log_result$confusion
-plot(log_result$roc)
+
+# Cross-Validation
+source("Modules/Status_classification/CrossValidation_Status.R")
+logit_model_cv <- cross_validate_model(
+  data = cleaned_data,
+  method = "glmnet",
+  tune_grid = expand.grid(alpha = 1, lambda = seq(0.001, 0.1, length = 10))
+)
 
 # ===============
 # Decision Tree
 # ===============
+# Result
 source("Modules/Status_classification/DT_status.R")
 tree_result <- run_status_tree(cleaned_data)
-rpart.plot(tree_result$model)
+rpart.plot(tree_result$model$finalModel)
+
+# Cross-Validation
+tree_model_cv <- cross_validate_model(
+  data = cleaned_data,
+  method = "rpart"
+)
 
 # ===============
 # Random Forest
 # ===============
+# Result
 source("Modules/Status_classification/RF_status.R")
 rf_result <- run_status_rf(cleaned_data)
-rf_result$importance_plot()
+
+# Cross-Validation
+rf_model_cv <- cross_validate_model(
+  data = cleaned_data,
+  method = "rf"
+)
+
+# ===============
+# ROC models comparison
+# ===============
+source("Modules/Status_classification/CrossValidation_Status.R")
+models_list <- list(logit_model_cv, tree_model_cv, rf_model_cv)
+model_names <- c("Logistic Regression", "Decision Tree", "Random Forest")
+
+compare_models_roc(models_list, model_names)
 
 --------------------------------------------------------------------------------
   # UNSUPERVISED LEARNING: LIFE EXPECTANCY VARIABLE

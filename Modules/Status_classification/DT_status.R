@@ -1,5 +1,6 @@
-run_status_rf <- function(cleaned_data) {
-  library(randomForest)
+run_status_tree <- function(cleaned_data) {
+  library(rpart)
+  library(rpart.plot)
   library(caret)
   
   source("Modules/Utils.R")
@@ -13,27 +14,31 @@ run_status_rf <- function(cleaned_data) {
   X <- model.matrix(Status ~ ., data = train_data)[, -1]
   Y <- as.factor(train_data$Status)
   
-  ctrl <- trainControl(method = "cv", number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+  ctrl <- trainControl(
+    method = "cv", 
+    number = 10, 
+    classProbs = TRUE, 
+    summaryFunction = twoClassSummary,
+    savePredictions = "final"
+  )
   
-  rf_model_cv <- train(
+  tree_model_cv <- train(
     Status ~ ., 
     data = train_data, 
-    method = "rf", 
+    method = "rpart", 
     trControl = ctrl, 
-    tuneGrid = expand.grid(mtry = c(2, 3, 4, 5)),
-    metric = "ROC",  
-    ntree = 100
+    metric = "ROC"  
   )
   
   # Variables' importance
-  importance <- varImp(rf_model_cv, scale = FALSE)
-  rf_df <- data.frame(
+  importance <- varImp(tree_model_cv, scale = FALSE)
+  tree_df <- data.frame(
     Feature = rownames(importance$importance),
     Coefficient = as.numeric(importance$importance[, 1])
   )
   
   return(list(
-    model = rf_model_cv,
-    important_vars = rf_df
+    model = tree_model_cv,
+    important_vars = tree_df
   ))
 }

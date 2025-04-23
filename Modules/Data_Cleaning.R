@@ -43,7 +43,10 @@ scaled_lifeexp <- cbind(
 # 6. Encode Status in a dummy
 scaled_lifeexp$Status <- ifelse(life_expectancy_dataset$Status == "Developed", 1, 0)
 
-# 7. Handle multicollinearity: drop highly correlated variables
+# 7. Checking Status bilancement 
+prop.table(table(scaled_lifeexp$Status))
+
+# 8. Handle multicollinearity: drop highly correlated variables
 corr_matrix <- cor(scaled_lifeexp[, -1])
 high_corr_pairs <- which(abs(corr_matrix) >= 0.9 & abs(corr_matrix) < 1, arr.ind = TRUE)
 high_corr_df <- data.frame(
@@ -56,7 +59,7 @@ high_corr_df <- high_corr_df[high_corr_df$Var1 < high_corr_df$Var2, ]
 vars_to_drop <- c("infant_deaths", "diphtheria", "thinness5_9years", "inc_composition")
 scaled_lifeexp_final <- scaled_lifeexp[, !(names(scaled_lifeexp) %in% vars_to_drop)]
 
-# 8. Graphs: do not print them when the module is called
+# 9. Graphs: do not print them when the module is called
 if (plot_cleaning_graphs) {
   library(gplots)
   
@@ -87,7 +90,7 @@ if (plot_cleaning_graphs) {
             srtRow=45)
 }
 
-# 9. Return only useful objects
+# 10. Return only useful objects
 result <- list(
   cleaned_data = scaled_lifeexp_final,
   original_data = life_expectancy_dataset,

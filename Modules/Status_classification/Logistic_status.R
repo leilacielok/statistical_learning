@@ -1,9 +1,7 @@
 run_status_logistic <- function(cleaned_data) {
   library(glmnet)
-  library(pROC)
   library(detectseparation)
-  library(caret)
-  
+
   source("Modules/Utils.R")
   data_split <- prepare_status_data(cleaned_data)
   train_data <- data_split$train
@@ -12,7 +10,7 @@ run_status_logistic <- function(cleaned_data) {
   X <- model.matrix(Status ~ ., data = train_data)[, -1]
   Y <- as.factor(train_data$Status)
   
-  detect_separation(x = X, y = Y, family = binomial())  # solo a scopo diagnostico
+  detect_separation(x = X, y = Y, family = binomial())
   
   # LASSO
   cv_fit <- cv.glmnet(X, Y, family = "binomial", alpha = 1)
@@ -23,10 +21,7 @@ run_status_logistic <- function(cleaned_data) {
   prob_pred <- predict(best_model, newx = x_test, type = "response")
   class_pred <- as.factor(ifelse(prob_pred >= 0.5, 1, 0))
   
-  cm <- confusionMatrix(class_pred, y_test, positive = "1")
-  roc_obj <- roc(y_test, as.numeric(prob_pred))
-  
-  # Importanza variabili
+  # Variables importance
   coef_lasso <- coef(best_model)
   lasso_df <- data.frame(
     Feature = rownames(coef_lasso),
@@ -35,8 +30,7 @@ run_status_logistic <- function(cleaned_data) {
   
   return(list(
     model = best_model,
-    confusion = cm,
-    roc = roc_obj,
     important_vars = lasso_df
   ))
 }
+
