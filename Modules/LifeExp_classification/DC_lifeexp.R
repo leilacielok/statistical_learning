@@ -8,8 +8,14 @@ run_lifeexp_tree <- function(cleaned_data) {
   train_data <- data_split$train
   test_data <- data_split$test
   
-  model <- rpart(lifeexp_cat ~ ., data = train_data, method = "class")
-  pred <- predict(model, newdata = test_data, type = "class")
+  model <- train(
+    lifeexp_cat ~ .,
+    data = train_data,
+    method = "rpart",
+    trControl = trainControl(method = "cv", number = 5)
+  )
+  
+  pred <- predict(model, newdata = test_data)
   pred <- factor(pred, levels = levels(test_data$lifeexp_cat))
   
   cm <- confusionMatrix(pred, test_data$lifeexp_cat)

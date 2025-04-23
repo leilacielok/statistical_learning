@@ -51,18 +51,18 @@ fviz_dend(hcpc_result, rect = TRUE)
 fviz_cluster(hcpc_result, repel = TRUE)
 
 --------------------------------------------------------------------------------
-  # SUPERVISED LEARNING: Status
+  # SUPERVISED LEARNING: STATUS
 --------------------------------------------------------------------------------
 # ===============
 # Logistic Regression
 # ===============
 # Result
 source("Modules/Status_classification/Logistic_status.R")
-log_result <- run_status_logistic(cleaned_data)
+log_status <- run_status_logistic(cleaned_data)
 
 # Cross-Validation
 source("Modules/Status_classification/CrossValidation_Status.R")
-logit_model_cv <- cross_validate_model(
+logit_status_cv <- cross_validate_model(
   data = cleaned_data,
   method = "glmnet",
   tune_grid = expand.grid(alpha = 1, lambda = seq(0.001, 0.1, length = 10))
@@ -73,11 +73,11 @@ logit_model_cv <- cross_validate_model(
 # ===============
 # Result
 source("Modules/Status_classification/DT_status.R")
-tree_result <- run_status_tree(cleaned_data)
-rpart.plot(tree_result$model$finalModel)
+tree_status <- run_status_tree(cleaned_data)
+rpart.plot(tree_status$model$finalModel)
 
 # Cross-Validation
-tree_model_cv <- cross_validate_model(
+tree_status_cv <- cross_validate_model(
   data = cleaned_data,
   method = "rpart"
 )
@@ -87,10 +87,10 @@ tree_model_cv <- cross_validate_model(
 # ===============
 # Result
 source("Modules/Status_classification/RF_status.R")
-rf_result <- run_status_rf(cleaned_data)
+rf_status <- run_status_rf(cleaned_data)
 
 # Cross-Validation
-rf_model_cv <- cross_validate_model(
+rf_status_cv <- cross_validate_model(
   data = cleaned_data,
   method = "rf"
 )
@@ -99,33 +99,57 @@ rf_model_cv <- cross_validate_model(
 # ROC models comparison
 # ===============
 source("Modules/Status_classification/CrossValidation_Status.R")
-models_list <- list(logit_model_cv, tree_model_cv, rf_model_cv)
-model_names <- c("Logistic Regression", "Decision Tree", "Random Forest")
+models_list_status <- list(logit_status_cv, tree_status_cv, rf_status_cv)
+model_names_status <- c("Logistic Regression", "Decision Tree", "Random Forest")
 
-compare_models_roc(models_list, model_names)
+compare_models_roc(models_list_status, model_names_status)
 
 --------------------------------------------------------------------------------
-  # UNSUPERVISED LEARNING: LIFE EXPECTANCY VARIABLE
+  # UNSUPERVISED LEARNING: LIFE EXPECTANCY 
 --------------------------------------------------------------------------------
 # ===============
 # Logistic
 # ===============
 source("Modules/LifeExp_classification/Logistic_lifeexp.R")
-lifeexp_log <- run_lifeexp_logistic(cleaned_data)
-lifeexp_log$confusion
+log_lifeexp <- run_lifeexp_logistic(cleaned_data)
+log_lifeexp$confusion
+
+# Cross-Validation
+source("Modules/LifeExp_classification/CrossValidation_Lifeexp.R")
+logit_lifeexp_cv <- cross_validate_model(
+  data = cleaned_data,
+  method = "multinom"
+)
 
 # ===============
 # Decision Tree
 # ===============
 source("Modules/LifeExp_classification/DC_lifeexp.R")
-lifeexp_tree <- run_lifeexp_tree(cleaned_data)
-rpart.plot(lifeexp_tree$model)
-lifeexp_tree$confusion
+tree_lifeexp <- run_lifeexp_tree(cleaned_data)
+rpart.plot(tree_lifeexp$model$finalModel)
+tree_lifeexp$confusion
+
+tree_lifeexp_cv <- cross_validate_model(
+  data = cleaned_data,
+  method = "rpart"
+)
 
 # ===============
 # Random Forest
 # ===============
 source("Modules/LifeExp_classification/RF_lifeexp.R")
-lifeexp_rf <- run_lifeexp_rf(cleaned_data)
-lifeexp_rf$confusion
-varImpPlot(lifeexp_rf$model)
+rf_lifeexp <- run_lifeexp_rf(cleaned_data)
+rf_lifeexp$confusion
+
+rf_lifeexp_cv <- cross_validate_model(
+  data = cleaned_data,
+  method = "rf"
+)
+
+# ===============
+# ROC models comparison
+# ===============
+models_list_lifeexp <- list(logit_lifeexp_cv, tree_lifeexp_cv, rf_lifeexp_cv)
+model_names_lifeexp <- c("Multinomial Logistic", "Decision Tree", "Random Forest")
+
+compare_models_multiclass(models_list_lifeexp, model_names_lifeexp)

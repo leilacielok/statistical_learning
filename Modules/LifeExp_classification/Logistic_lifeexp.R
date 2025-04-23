@@ -1,5 +1,4 @@
 run_lifeexp_logistic <- function(cleaned_data) {
-  library(nnet)  
   library(caret)
   
   source("Modules/Utils.R")
@@ -7,7 +6,12 @@ run_lifeexp_logistic <- function(cleaned_data) {
   train_data <- data_split$train
   test_data <- data_split$test
   
-  model <- multinom(lifeexp_cat ~ ., data = train_data)
+  model <- train(
+    lifeexp_cat ~ .,
+    data = train_data,
+    method = "multinom",
+    trControl = trainControl(method = "none")
+  )
   
   pred <- predict(model, newdata = test_data)
   pred <- factor(pred, levels = levels(test_data$lifeexp_cat))
@@ -20,4 +24,3 @@ run_lifeexp_logistic <- function(cleaned_data) {
     predictions = pred
   ))
 }
-run_lifeexp_logistic(cleaned_data)
