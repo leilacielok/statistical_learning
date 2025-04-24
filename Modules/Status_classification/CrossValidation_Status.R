@@ -47,7 +47,7 @@ compare_models_roc <- function(models, model_names) {
     
     auc_values[i] <- round(auc(roc_obj), 3)
     
-    lines(roc_obj, col = colors[i], lwd = 2)
+    lines(roc_obj, col = colors[i], lwd = 2, alpha = 0.7)
     model_names[i] <- paste0(model_names[i], " (AUC = ", auc_values[i], ")")
   }
   

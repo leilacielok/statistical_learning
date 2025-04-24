@@ -5,7 +5,7 @@ run_lifeexp_logistic <- function(cleaned_data) {
   data_split <- prepare_lifeexp_data(cleaned_data)
   train_data <- data_split$train
   test_data <- data_split$test
-  
+
   model <- train(
     lifeexp_cat ~ .,
     data = train_data,

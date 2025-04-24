@@ -1,8 +1,6 @@
 --------------------------------------------------------------------------------
   # CLEANING THE DATASET
 --------------------------------------------------------------------------------
-
-plot_cleaning_graphs <- FALSE
 data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$value
 cleaned_data <- data_cleaning_result$cleaned_data
 
@@ -132,6 +130,7 @@ tree_lifeexp_cv <- cross_validate_model(
 # ===============
 # Random Forest
 # ===============
+# Classification
 source("Modules/LifeExp_classification/RF_lifeexp.R")
 rf_lifeexp <- run_lifeexp_rf(cleaned_data)
 
@@ -139,6 +138,28 @@ rf_lifeexp_cv <- cross_validate_model(
   data = cleaned_data,
   method = "rf"
 )
+
+# Regression
+source("Modules/LifeExp_regression/RFReg_lifeexp.R")
+rfreg_lifeexp <- run_lifeexp_rfreg(cleaned_data)
+
+# ===============
+# Linear Regression
+# ===============
+source("Modules/LifeExp_regression/LinReg_lifeexp.R")
+linreg_lifeexp <- run_lifeexp_linreg(cleaned_data)
+
+# ===============
+# Ridge Regression
+# ===============
+source("Modules/LifeExp_regression/RidgeReg_lifeexp.R")
+ridge_lifeexp <- run_lifeexp_ridge(cleaned_data)
+
+# ===============
+# SVM Regression
+# ===============
+source("Modules/LifeExp_regression/SVMReg_lifeexp.R")
+svm_lifeexp <- run_lifeexp_svm(cleaned_data)
 
 # ===============
 # ROC models comparison

@@ -117,4 +117,3 @@ prepare_lifeexp_data <- function(cleaned_data, seed = 123) {
   
   return(list(train = train_data, test = test_data))
 }
-

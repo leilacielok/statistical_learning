@@ -1,7 +1,3 @@
-# =============================
-# Hierarchical Clustering
-# =============================
-
 run_hierarchical_clustering <- function() {
   # Libraries
   library(cluster)

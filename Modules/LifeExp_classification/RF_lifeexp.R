@@ -2,6 +2,8 @@ run_lifeexp_rf <- function(cleaned_data) {
   library(randomForest)
   library(caret)
   
+  set.seed(123)
+  
   source("Modules/Utils.R", local = new.env())
   data_split <- prepare_lifeexp_data(cleaned_data)
   train_data <- data_split$train
