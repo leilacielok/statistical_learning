@@ -1,13 +1,15 @@
 run_lifeexp_svm <- function(data) {
   library(e1071)
-  library(Metrics)
+  library(caret)
+  
   model <- svm(life_expectancy ~ ., data = data, type = "eps-regression", kernel = "radial")
 
   preds <- predict(model, newdata = data)
-  rmse_svm <- rmse(actual = cleaned_data$life_expectancy, predicted = preds)
-  r_squared <- cor(cleaned_data$life_expectancy, preds)^2
   
-  cat("RMSE: ", rmse_svm, "\n")
+  rmse <- RMSE(preds, data$life_expectancy)
+  r_squared <- R2(preds, data$life_expectancy)
+  
+  cat("RMSE: ", rmse, "\n")
   cat("R²: ", r_squared, "\n")
   
   plot(data$life_expectancy, preds,
@@ -20,5 +22,9 @@ run_lifeexp_svm <- function(data) {
   hist(residuals, breaks = 20, col = "lightblue",
        main = "SVM Residuals", xlab = "Prediction Errors")
   
-  return(model)
+  return(list(
+    svm_model = model,
+    rmse = rmse,
+    r2 = r_squared
+  ))
 }

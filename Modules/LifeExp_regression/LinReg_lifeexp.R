@@ -15,11 +15,10 @@ run_lifeexp_linreg <- function(data) {
     trControl = trainControl(method = "cv", number = 10)
   )
   
-  print(summary(model))
-  print(paste("RMSE:", model$results$RMSE))
-  print(paste("R-squared:", model$results$Rsquared))
-  
   predictions <- predict(model, newdata = data)
+  
+  rmse <- RMSE(predictions, data[[target_var]])
+  r2 <- R2(predictions, data[[target_var]])
   
   # Dataframe for visualization
   plot_data <- data.frame(
@@ -37,9 +36,14 @@ run_lifeexp_linreg <- function(data) {
     ) +
     theme_minimal()
   
+  cat("Linear Regression RMSE:", round(rmse, 4), "\n")
+  cat("Linear Regression R²:", round(r2, 4), "\n")
+  
   return(list(
     linreg_model = model,
-    linreg_plot = plot
+    linreg_plot = plot,
+    rmse = rmse,
+    r2 = r2
     ))
 }
 

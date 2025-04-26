@@ -154,7 +154,7 @@ linreg_lifeexp <- run_lifeexp_linreg(cleaned_data)
 # ===============
 source("Modules/LifeExp_regression/RidgeReg_lifeexp.R")
 ridge_lifeexp <- run_lifeexp_ridge(cleaned_data)
-plot_ridge_predictions(ridge_lifeexp, cleaned_data)
+plot_ridge_predictions(ridge_lifeexp$ridge_model, cleaned_data)
 
 # ===============
 # SVM Regression
@@ -163,9 +163,25 @@ source("Modules/LifeExp_regression/SVMReg_lifeexp.R")
 svm_lifeexp <- run_lifeexp_svm(cleaned_data)
 
 # ===============
-# ROC models comparison
+# ROC: classification models comparison
 # ===============
 models_list_lifeexp <- list(logit_lifeexp_cv, tree_lifeexp_cv, rf_lifeexp_cv)
 model_names_lifeexp <- c("Multinomial Logistic", "Decision Tree", "Random Forest")
 
 compare_models_multiclass(models_list_lifeexp, model_names_lifeexp)
+
+# ===============
+# RMSE and R2: regression models comparison
+# ===============
+linreg_lifeexp <- run_lifeexp_linreg(cleaned_data)
+ridge_lifeexp <- run_lifeexp_ridge(cleaned_data)
+svm_lifeexp <- run_lifeexp_svm(cleaned_data)
+rfreg_lifeexp <- run_lifeexp_rfreg(cleaned_data)
+
+source("Modules/LifeExp_regression/Regressions_Comparison.R")
+results_comparison <- compare_regression_models(
+  linreg_lifeexp, 
+  ridge_lifeexp, 
+  svm_lifeexp, 
+  rfreg_lifeexp
+)
