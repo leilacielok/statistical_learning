@@ -100,7 +100,7 @@ model_names_status <- c("Logistic Regression", "Decision Tree", "Random Forest")
 compare_models_roc(models_list_status, model_names_status)
 
 --------------------------------------------------------------------------------
-  # UNSUPERVISED LEARNING: LIFE EXPECTANCY 
+  # SUPERVISED LEARNING: LIFE EXPECTANCY 
 --------------------------------------------------------------------------------
 # ===============
 # Logistic
@@ -154,6 +154,7 @@ linreg_lifeexp <- run_lifeexp_linreg(cleaned_data)
 # ===============
 source("Modules/LifeExp_regression/RidgeReg_lifeexp.R")
 ridge_lifeexp <- run_lifeexp_ridge(cleaned_data)
+plot_ridge_predictions(ridge_lifeexp, cleaned_data)
 
 # ===============
 # SVM Regression

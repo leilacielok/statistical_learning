@@ -42,3 +42,4 @@ run_lifeexp_linreg <- function(data) {
     linreg_plot = plot
     ))
 }
+
