@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
   # CLEANING THE DATASET
 --------------------------------------------------------------------------------
+## Just check the corrections_map!
+  
 data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$value
 cleaned_data <- data_cleaning_result$cleaned_data
 cleaned_data_original <- cleaned_data
