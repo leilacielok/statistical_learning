@@ -1,5 +1,4 @@
-run_hierarchical_clustering <- function() {
-  # Libraries
+run_hierarchical_clustering <- function(cleaned_data) {
   library(cluster)
   library(factoextra)
   library(FactoMineR)
@@ -10,29 +9,31 @@ run_hierarchical_clustering <- function() {
   library(rnaturalearth)
   library(rnaturalearthdata)
   
-  # --- Cleaned data ---
-  data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$value
-  cleaned_data <- data_cleaning_result$cleaned_data
-  hc_data <- cleaned_data[ , -1]
-  
-  # --- Import utils ---
   source("Modules/Utils.R")
+  source("Modules/Analysis_PCA.R")
   
-  # --- Distances ---
+  # PCA (for HCPC)
+  pca_analysis_result <- run_pca_analysis(cleaned_data[,-ncol(cleaned_data)])
+  pca_result <- pca_analysis_result$pca_result
+  df_pca <- data.frame(pca_result$x[, 1:5])
+  res_hcpc <- HCPC(df_pca, nb.clust = -1, graph = FALSE)
+  
+  # Clustering
+  hc_data <- cleaned_data[, -c(1, ncol(cleaned_data))]
   dist_matrix <- dist(hc_data)
   
-  # --- Hierarchical Clustering ---
+  # Linkages
   hc_avg <- hclust(dist_matrix, method = "average")
   hc_com <- hclust(dist_matrix, method = "complete")
   hc_ward <- hclust(dist_matrix, method = "ward.D2")
   
-  # --- Cut in 4 cluster ---
+  # Cut in k cluster
   k <- 3
   clusters_avg <- cutree(hc_avg, k)
   clusters_com <- cutree(hc_com, k)
   clusters_ward <- cutree(hc_ward, k)
   
-  # --- Add clusters ---
+  
   cleaned_data <- cleaned_data %>%
     mutate(
       cluster_avg = as.factor(clusters_avg),
@@ -40,10 +41,7 @@ run_hierarchical_clustering <- function() {
       cluster_ward = as.factor(clusters_ward)
     )
   
-  # --- Standardize Country names ---
-  cleaned_data <- standardize_country_names(cleaned_data)
-  
-  # --- World map ---
+  # World map 
   world <- ne_countries(scale = "medium", returnclass = "sf")
   map_data <- cleaned_data %>%
     select(Country_std, cluster_avg, cluster_com, cluster_ward)
@@ -68,38 +66,30 @@ run_hierarchical_clustering <- function() {
     theme_minimal() +
     labs(title = "World Map - Hierarchical Clustering (Ward.D2)")
   
-  # --- Compare linkage methods ---
+  world_map <- list(hc_avg_map, hc_com_map, hc_ward_map)
+  
+  # Compare linkage methods
   compare_avg_com <- table(clusters_avg, clusters_com)
   compare_avg_ward <- table(clusters_avg, clusters_ward)
   compare_com_ward <- table(clusters_com, clusters_ward)
   
-  # --- Dendograms Visualization ---
-  par(mfrow = c(1, 3))
-  plot(hc_avg, main = "Average Linkage")
-  rect.hclust(hc_avg, k = k, border = "blue")
-  plot(hc_com, main = "Complete Linkage")
-  rect.hclust(hc_com, k = k, border = "green")
-  plot(hc_ward, main = "Ward.D2 Linkage")
-  rect.hclust(hc_ward, k = k, border = "red")
-  par(mfrow = c(1, 1))  # Reset layout
+  # Dendograms
+  dendro_avg <- fviz_dend(hc_avg, k = k, rect = TRUE, main = "Dendrogram Average")
+  dendro_com <- fviz_dend(hc_com, k = k, rect = TRUE, main = "Dendrogram Complete")
+  dendro_ward <- fviz_dend(hc_ward, k = k, rect = TRUE, main = "Dendrogram Ward.D2")
   
-  # --- HCPC (Hierarchical Clustering on Principal Components) ---
-  pca_result <- source("Modules/Analysis_PCA.R")$value$pca_result
-  df_pca <- data.frame(pca_result$x[, 1:5])  
-  res_hcpc <- HCPC(df_pca, nb.clust = -1, graph = FALSE)
-  
-  # --- Output ---
   result <- list(
     hc_data = cleaned_data,
-    dendrograms = list(avg = hc_avg, complete = hc_com, ward = hc_ward),
+    dendrograms = list(avg = dendro_avg, complete = dendro_com, ward = dendro_ward),
     tables = list(avg_vs_com = compare_avg_com,
                   avg_vs_ward = compare_avg_ward,
                   com_vs_ward = compare_com_ward),
     hcpc = res_hcpc,
-    world_map = list(hc_avg_map,
-                     hc_com_map,
-                     hc_ward_map)
+    world_map = world_map
   )
   
   return(result)
 }
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+world$name

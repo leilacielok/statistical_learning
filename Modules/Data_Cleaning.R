@@ -1,11 +1,33 @@
 library(plotly)
 library(dplyr)
 library(e1071)
+library(countrycode)
+library(stringr)
 
 if (!exists("plot_cleaning_graphs")) plot_cleaning_graphs <- FALSE
 
 # 1. Import the dataset
 life_expectancy_dataset <- read.csv("life.expectancy.csv")
+
+life_expectancy_dataset <- life_expectancy_dataset %>%
+  mutate(Country = recode(Country,
+                          "Antigua & Barbuda" = "Antigua and Barbuda",
+                          "Bosnia & Herzegovina" = "Bosnia and Herzegovina",
+                          "Cape Verde" = "Cabo Verde",
+                          "Central African Republic" = "Central African Republic", 
+                          "Congo - Brazzaville" = "Republic of the Congo",
+                          "Congo - Kinshasa" = "Democratic Republic of the Congo",
+                          "Dominican Republic" = "Dominican Republic",             
+                          "Equatorial Guinea" = "Equatorial Guinea",              
+                          "Micronesia (Federated States of)" = "Federated States of Micronesia", 
+                          "Myanmar (Burma)" = "Myanmar",
+                          "St. Lucia" = "Saint Lucia",
+                          "St. Vincent & Grenadines" = "Saint Vincent and the Grenadines",
+                          "São Tomé & Príncipe" = "Sao Tome and Principe",
+                          "Solomon Islands" = "Solomon Islands",
+                          "South Sudan" = "South Sudan",
+                          "Trinidad & Tobago" = "Trinidad and Tobago",
+                          "United States" = "United States of America" ))
 
 # 2. Fix character variables
 life_expectancy_dataset <- life_expectancy_dataset %>%
@@ -57,9 +79,31 @@ high_corr_df <- data.frame(
 high_corr_df <- high_corr_df[high_corr_df$Var1 < high_corr_df$Var2, ]
 
 vars_to_drop <- c("infant_deaths", "diphtheria", "thinness5_9years", "inc_composition")
-scaled_lifeexp_final <- scaled_lifeexp[, !(names(scaled_lifeexp) %in% vars_to_drop)]
+life_expectancy_dataset <- scaled_lifeexp[, !(names(scaled_lifeexp) %in% vars_to_drop)]
 
-# 9. Graphs: do not print them when the module is called
+# 9. Add the function to standardize country names
+standardize_country_names <- function(df, country_col = "Country") {
+  df$Country_std <- countrycode(df[[country_col]],
+                                origin = "country.name",
+                                destination = "country.name")
+  
+  df$Country_std <- ifelse(is.na(df$Country_std), df[[country_col]], df$Country_std)
+  
+  unmatched <- df[[country_col]][is.na(countrycode(df$Country_std,
+                                                   origin = "country.name",
+                                                   destination = "country.name"))]
+  
+  if (length(unmatched) > 0) {
+    warning("Attenzione: i seguenti paesi non sono stati riconosciuti completamente:\n",
+            paste(unique(unmatched), collapse = ", "))
+  }
+  
+  return(df)
+}
+
+scaled_lifeexp_final <- standardize_country_names(life_expectancy_dataset)
+
+# 10. Graphs: do not print them when the module is called
 if (plot_cleaning_graphs) {
   library(gplots)
   
@@ -90,7 +134,7 @@ if (plot_cleaning_graphs) {
             srtRow=45)
 }
 
-# 10. Return only useful objects
+# 11. Return only useful objects
 result <- list(
   cleaned_data = scaled_lifeexp_final,
   original_data = life_expectancy_dataset,

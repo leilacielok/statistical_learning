@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$value
 cleaned_data <- data_cleaning_result$cleaned_data
+cleaned_data_original <- cleaned_data
 
 --------------------------------------------------------------------------------
   # UNSUPERVISED LEARNING: STATUS VARIABLE
@@ -10,35 +11,32 @@ cleaned_data <- data_cleaning_result$cleaned_data
 # ==========
 # PCA
 # ==========
-plot_pca_graphs <- FALSE
-pca_analysis_result <- source("Modules/Analysis_PCA.R")$value
+source("Modules/Analysis_PCA.R")
+pca_analysis_result <- run_pca_analysis(cleaned_data_original)
 pca_loadings <- pca_analysis_result$loadings
 
 # ==========
 # t-SNE
 # ==========
-plot_tsne_graphs <- FALSE
-tsne_analysis_result <- source("Modules/Analysis_tSNE.R")$value
+source("Modules/Analysis_tSNE.R")
+tsne_analysis_result <- run_tsne_analysis(cleaned_data_original)
 tsne_result <- tsne_analysis_result$tsne_result
 
 # =============
 # K-Means Clustering
 # =============
 source("Modules/Clustering_KMeans.R")
-clustering_result <- run_kmeans_clustering()
+kmeans_result <- run_kmeans_clustering(cleaned_data_original)
 
-cleaned_data <- clustering_result$cleaned_data
-pca_data <- clustering_result$pca_data
-tsne_data <- clustering_result$tsne_data
+pca_data <- kmeans_result$pca_data
+tsne_data <- kmeans_result$tsne_data
 
 # =============
 # Hierarchical Clustering
 # =============
 source("Modules/Clustering_Hierarchical.R")
-hierarchical_result <- run_hierarchical_clustering()
-
-cleaned_data <- hierarchical_result$hc_data
-hcpc_result <- hierarchical_result$hcpc
+hierarchical_result <- run_hierarchical_clustering(cleaned_data_original)
+hierarchical_result$world_map
 
 # Static map
 print(hierarchical_result$world_map)
@@ -139,7 +137,7 @@ rf_lifeexp_cv <- cross_validate_model(
   method = "rf"
 )
 
-# Regression
+# RF Regression
 source("Modules/LifeExp_regression/RFReg_lifeexp.R")
 rfreg_lifeexp <- run_lifeexp_rfreg(cleaned_data)
 
@@ -161,6 +159,7 @@ plot_ridge_predictions(ridge_lifeexp$ridge_model, cleaned_data)
 # ===============
 source("Modules/LifeExp_regression/SVMReg_lifeexp.R")
 svm_lifeexp <- run_lifeexp_svm(cleaned_data)
+svm_lifeexp$imp_plot
 
 # ===============
 # ROC: classification models comparison

@@ -13,13 +13,7 @@ library(ggrepel)
 # 1. Country names standardization
 # -----------------------
 standardize_country_names <- function(df, country_col = "Country") {
-  df$Country_std <- countrycode(df[[country_col]],
-                                origin = "country.name",
-                                destination = "country.name")
-  
-  df$Country_std <- ifelse(is.na(df$Country_std), df[[country_col]], df$Country_std)
-  
-  df$Country_std <- recode(df$Country_std,
+  df[[country_col]] <- recode(df[[country_col]],
                            "CentralAfricanRepublic" = "Central African Republic",
                            "DominicanRepublic" = "Dominican Republic",
                            "LaoPeople'sDemocraticRepublic" = "Lao PDR",
@@ -27,6 +21,12 @@ standardize_country_names <- function(df, country_col = "Country") {
                            "SouthAfrica" = "South Africa",
                            "UnitedStatesofAmerica" = "United States of America"
   )
+                           
+  df$Country_std <- countrycode(df[[country_col]],
+                                origin = "country.name",
+                                destination = "country.name")
+  
+  df$Country_std <- ifelse(is.na(df$Country_std), df[[country_col]], df$Country_std)
   
   return(df)
 }

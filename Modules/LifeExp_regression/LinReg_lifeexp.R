@@ -39,9 +39,27 @@ run_lifeexp_linreg <- function(data) {
   cat("Linear Regression RMSE:", round(rmse, 4), "\n")
   cat("Linear Regression R²:", round(r2, 4), "\n")
   
+  coefficients <- summary(model$finalModel)$coefficients
+  coefficients_df <- data.frame(Feature = rownames(coefficients), 
+                                Coefficient = coefficients[, 1])
+  
+  # Order by importance
+  coefficients_df$abs_coefficient <- abs(coefficients_df$Coefficient)
+  coefficients_df <- coefficients_df[order(-coefficients_df$abs_coefficient), ]
+  
+  # Visualization
+  importance_plot <- ggplot(coefficients_df, aes(x = reorder(Feature, abs_coefficient), y = abs_coefficient)) +
+    geom_col(fill = "skyblue") +
+    coord_flip() +
+    ggtitle("Linear Regression: Feature Importance") +
+    xlab("Features") +
+    ylab("Absolute Coefficients") +
+    theme_minimal()
+  
   return(list(
     linreg_model = model,
     linreg_plot = plot,
+    imp_plot = importance_plot,
     rmse = rmse,
     r2 = r2
     ))

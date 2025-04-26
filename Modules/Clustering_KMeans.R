@@ -1,8 +1,4 @@
-# =============================
-# K-Means Clustering function
-# =============================
-
-run_kmeans_clustering <- function() {
+run_kmeans_clustering <- function(cleaned_data) {
   # --- Libraries ---
   library(dplyr)
   library(ggplot2)
@@ -10,28 +6,27 @@ run_kmeans_clustering <- function() {
   library(countrycode)
   
   # --- PCA, t-SNE, Utils ---
-  pca_analysis_result <- source("Modules/Analysis_PCA.R", local=new.env())$value
-  tsne_analysis_result <- source("Modules/Analysis_tSNE.R", local(new.env()))$value
+  source("Modules/Analysis_PCA.R")
+  source("Modules/Analysis_tSNE.R")
   source("Modules/Utils.R")
+  
+  pca_analysis_result <- run_pca_analysis(cleaned_data)
+  tsne_analysis_result <- run_tsne_analysis(cleaned_data)
   
   pca_result <- pca_analysis_result$pca_result
   pca_loadings <- pca_analysis_result$loadings
   tsne_result <- tsne_analysis_result$tsne_result
   
-  # --- Cleaned data ---
-  data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$value
-  cleaned_data <- data_cleaning_result$cleaned_data
-  
   # --- wss: Elbow Method ---
   wss <- numeric(10)
   for (k in 1:10) {
-    wss[k] <- sum(kmeans(cleaned_data[,-1], centers = k, nstart = 25)$withinss)
+    wss[k] <- sum(kmeans(cleaned_data[,-c(1, ncol(cleaned_data))], centers = k, nstart = 25)$withinss)
   }
 
   # --- K-Means on PCA ---
   set.seed(123)
   k_opt <- 4
-  km_model <- kmeans(cleaned_data[,-1], centers = k_opt, nstart = 25)
+  km_model <- kmeans(cleaned_data[,-c(1, ncol(cleaned_data))], centers = k_opt, nstart = 25)
   cleaned_data$kcluster_pca <- as.factor(km_model$cluster)
   
   # --- K-Means on t-SNE ---
