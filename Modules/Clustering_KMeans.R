@@ -54,12 +54,12 @@ run_kmeans_clustering <- function(cleaned_data) {
     Y = tsne_result$Y[, 2]
   )
   
-  # Visualization: 2d
+  # Visualization on PCA: 2d
   loadings_df <- as.data.frame(pca_loadings[, 1:2])
   colnames(loadings_df) <- c("PC1", "PC2")
   loadings_df$varnames <- rownames(loadings_df)
     
-  plot2d <- ggplot(data = pca_data, aes(x = X, y = Y, color = kcluster_pca, label = Country)) +
+  plot2dpca <- ggplot(data = pca_data, aes(x = X, y = Y, color = kcluster_pca, label = Country)) +
     geom_point(size = 3) +
     geom_text_repel(size = 3, max.overlaps = 20) +
     geom_segment(
@@ -86,8 +86,8 @@ run_kmeans_clustering <- function(cleaned_data) {
       color = "Cluster") +
     theme(plot.title = element_text(hjust = 0.5))
   
-  # Visualization: 3d
-  plot3d <- plot_ly(
+  # Visualization on PCA: 3d
+  plot3dpca <- plot_ly(
     pca_data, x = ~X, y = ~Y, z = ~PC3, 
     color = ~kcluster_pca, 
     colors = "Set1",
@@ -105,6 +105,19 @@ run_kmeans_clustering <- function(cleaned_data) {
       )
     )
   
+  # Visualization on tSNE
+  plottsne <- ggplot(data = tsne_data, aes(x = X, y = Y, color = kcluster_tsne, label = Country)) +
+    geom_point(size = 3) +
+    geom_text_repel(size = 3, max.overlaps = 20) +
+    theme_minimal() +
+    labs(
+      title = "KMeans Clustering on t-SNE (2D)",
+      x = "t-SNE 1",
+      y = "t-SNE 2",
+      color = "Cluster"
+    ) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
   # --- Output ---
   result <- list(
     kmeans_data = cleaned_data,
@@ -114,8 +127,9 @@ run_kmeans_clustering <- function(cleaned_data) {
     pca_loadings = pca_loadings,
     tsne_result = tsne_result,
     elbow_wss = wss,
-    plot_2d = plot2d,
-    plot_3d = plot3d
+    plot_2dpca = plot2dpca,
+    plot_3dpca = plot3dpca,
+    plot_tsne = plottsne
   )
   
   return(result)
