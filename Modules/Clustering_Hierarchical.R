@@ -27,6 +27,11 @@ run_hierarchical_clustering <- function(cleaned_data) {
   hc_com <- hclust(dist_matrix, method = "complete")
   hc_ward <- hclust(dist_matrix, method = "ward.D2")
   
+  # Labels to the dendograms
+  hc_avg$labels <- cleaned_data$Country_std
+  hc_com$labels <- cleaned_data$Country_std
+  hc_ward$labels <- cleaned_data$Country_std
+  
   # Cut in k cluster
   k <- 3
   clusters_avg <- cutree(hc_avg, k)
@@ -74,9 +79,9 @@ run_hierarchical_clustering <- function(cleaned_data) {
   compare_com_ward <- table(clusters_com, clusters_ward)
   
   # Dendograms
-  dendro_avg <- fviz_dend(hc_avg, k = k, rect = TRUE, main = "Dendrogram Average")
-  dendro_com <- fviz_dend(hc_com, k = k, rect = TRUE, main = "Dendrogram Complete")
-  dendro_ward <- fviz_dend(hc_ward, k = k, rect = TRUE, main = "Dendrogram Ward.D2")
+  dendro_avg <- fviz_dend(hc_avg, k = k, rect = TRUE, main = "Dendrogram Average", cex = 0.4, horiz = FALSE)
+  dendro_com <- fviz_dend(hc_com, k = k, rect = TRUE, main = "Dendrogram Complete", cex = 0.4, horiz = FALSE)
+  dendro_ward <- fviz_dend(hc_ward, k = k, rect = TRUE, main = "Dendrogram Ward.D2", cex = 0.4, horiz = FALSE)
   
   result <- list(
     hc_data = cleaned_data,
@@ -90,6 +95,3 @@ run_hierarchical_clustering <- function(cleaned_data) {
   
   return(result)
 }
-
-world <- ne_countries(scale = "medium", returnclass = "sf")
-world$name

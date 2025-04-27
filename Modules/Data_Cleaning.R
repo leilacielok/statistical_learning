@@ -3,6 +3,7 @@ library(dplyr)
 library(e1071)
 library(countrycode)
 library(stringr)
+library(rnaturalearth)
 
 if (!exists("plot_cleaning_graphs")) plot_cleaning_graphs <- FALSE
 
@@ -139,7 +140,6 @@ standardize_country_names <- function(df, country_col = "Country") {
 }
 
 scaled_lifeexp_final <- standardize_country_names(life_expectancy_dataset)
-cleaned_data <- scaled_lifeexp_final
 
 # 10. Graphs: do not print them when the module is called
 if (plot_cleaning_graphs) {

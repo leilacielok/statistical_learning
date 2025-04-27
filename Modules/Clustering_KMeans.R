@@ -4,6 +4,7 @@ run_kmeans_clustering <- function(cleaned_data) {
   library(ggplot2)
   library(ggrepel)
   library(countrycode)
+  library(plotly)
   
   # --- PCA, t-SNE, Utils ---
   source("Modules/Analysis_PCA.R")
@@ -16,6 +17,8 @@ run_kmeans_clustering <- function(cleaned_data) {
   pca_result <- pca_analysis_result$pca_result
   pca_loadings <- pca_analysis_result$loadings
   tsne_result <- tsne_analysis_result$tsne_result
+  
+  prop_var_explained <- (pca_result$sdev)^2 / sum((pca_result$sdev)^2)
   
   # --- wss: Elbow Method ---
   wss <- numeric(10)
@@ -51,20 +54,68 @@ run_kmeans_clustering <- function(cleaned_data) {
     Y = tsne_result$Y[, 2]
   )
   
-  # --- Standardized Country names ---
-  pca_data <- standardize_country_names(pca_data)
-  tsne_data <- standardize_country_names(tsne_data)
-  cleaned_data$Country_std <- pca_data$Country_std
+  # Visualization: 2d
+  loadings_df <- as.data.frame(pca_loadings[, 1:2])
+  colnames(loadings_df) <- c("PC1", "PC2")
+  loadings_df$varnames <- rownames(loadings_df)
+    
+  plot2d <- ggplot(data = pca_data, aes(x = X, y = Y, color = kcluster_pca, label = Country)) +
+    geom_point(size = 3) +
+    geom_text_repel(size = 3, max.overlaps = 20) +
+    geom_segment(
+      data = loadings_df, 
+      aes(x = 0, y = 0, xend = PC1*5, yend = PC2*5),
+      arrow = arrow(length = unit(0.3, "cm")), 
+      color = "darkorange",
+      linewidth = 1,
+      inherit.aes = FALSE
+    ) +
+    geom_text_repel(
+      data = loadings_df, 
+      aes(x = PC1*5.2, y = PC2*5.2, label = varnames),
+      inherit.aes = FALSE,
+      color = "darkorange", 
+      size = 3,
+      fontface = "bold"
+    ) +
+    theme_minimal() +
+    labs(
+      title = "KMeans Clustering on PCA (2D)", 
+      x = paste0("PC1 (", round(prop_var_explained[1] * 100, 1), "%)"),
+      y = paste0("PC2 (", round(prop_var_explained[2] * 100, 1), "%)"), 
+      color = "Cluster") +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  # Visualization: 3d
+  plot3d <- plot_ly(
+    pca_data, x = ~X, y = ~Y, z = ~PC3, 
+    color = ~kcluster_pca, 
+    colors = "Set1",
+    text = ~Country, 
+    type = "scatter3d", 
+    mode = "markers",
+    marker = list(size = 4.5)
+  ) %>%
+    layout(
+      title = "KMeans Clustering on PCA (3D)",
+      scene = list(
+        xaxis = list(title = paste0("PC1 (", round(prop_var_explained[1] * 100, 1), "%)")),
+        yaxis = list(title = paste0("PC2 (", round(prop_var_explained[2] * 100, 1), "%)")),
+        zaxis = list(title = paste0("PC3 (", round(prop_var_explained[3] * 100, 1), "%)"))
+      )
+    )
   
   # --- Output ---
   result <- list(
-    cleaned_data = cleaned_data,
+    kmeans_data = cleaned_data,
     pca_data = pca_data,
     tsne_data = tsne_data,
     pca_result = pca_result,
     pca_loadings = pca_loadings,
     tsne_result = tsne_result,
-    elbow_wss = wss
+    elbow_wss = wss,
+    plot_2d = plot2d,
+    plot_3d = plot3d
   )
   
   return(result)

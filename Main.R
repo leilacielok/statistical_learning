@@ -1,8 +1,6 @@
 --------------------------------------------------------------------------------
   # CLEANING THE DATASET
 --------------------------------------------------------------------------------
-## Just check the corrections_map!
-  
 data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$value
 cleaned_data <- data_cleaning_result$cleaned_data
 cleaned_data_original <- cleaned_data
@@ -30,23 +28,11 @@ tsne_result <- tsne_analysis_result$tsne_result
 source("Modules/Clustering_KMeans.R")
 kmeans_result <- run_kmeans_clustering(cleaned_data_original)
 
-pca_data <- kmeans_result$pca_data
-tsne_data <- kmeans_result$tsne_data
-
 # =============
 # Hierarchical Clustering
 # =============
 source("Modules/Clustering_Hierarchical.R")
 hierarchical_result <- run_hierarchical_clustering(cleaned_data_original)
-hierarchical_result$world_map
-
-# Static map
-print(hierarchical_result$world_map)
-#  HCPC dendogram
-fviz_dend(hcpc_result, rect = TRUE)
-
-# HCPC clusters 
-fviz_cluster(hcpc_result, repel = TRUE)
 
 --------------------------------------------------------------------------------
   # SUPERVISED LEARNING: STATUS
