@@ -117,3 +117,43 @@ prepare_lifeexp_data <- function(cleaned_data, seed = 123) {
   
   return(list(train = train_data, test = test_data))
 }
+
+# ---------------------
+# 8. Visualization Maps Kmeans
+# ---------------------
+generate_kmeans_map <- function(cleaned_data, method = "pca") {
+  library(dplyr)
+  library(ggplot2)
+  library(sf)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  
+  world <- ne_countries(scale = "medium", returnclass = "sf")
+  
+  if (method == "pca") {
+    map_data <- cleaned_data %>%
+      select(Country_std, kcluster_pca)
+    fill_var <- "kcluster_pca"
+    title_map <- "World Map - KMeans Clustering (PCA)"
+  } else if (method == "tsne") {
+    map_data <- cleaned_data %>%
+      select(Country_std, kcluster_tsne)
+    fill_var <- "kcluster_tsne"
+    title_map <- "World Map - KMeans Clustering (t-SNE)"
+  } else {
+    stop("Method not valid: use 'pca' or 'tsne'")
+  }
+  
+  # --- Join ---
+  world_map <- left_join(world, map_data, by = c("name" = "Country_std"))
+  
+  # --- Plot ---
+  map_plot <- ggplot(data = world_map) +
+    geom_sf(aes_string(fill = fill_var), color = "white", size = 0.1) +
+    scale_fill_brewer(palette = "Set2", name = "Cluster") +
+    theme_minimal() +
+    labs(title = title_map)
+  
+  return(map_plot)
+}
+

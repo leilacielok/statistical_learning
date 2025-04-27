@@ -26,7 +26,13 @@ tsne_result <- tsne_analysis_result$tsne_result
 # K-Means Clustering
 # =============
 source("Modules/Clustering_KMeans.R")
+source("Modules/Utils.R")
 kmeans_result <- run_kmeans_clustering(cleaned_data_original)
+
+pca_map <- generate_kmeans_map(kmeans_result$kmeans_data, method = "pca")
+tsne_map <- generate_kmeans_map(kmeans_result$kmeans_data, method = "tsne")
+print(pca_map)
+print(tsne_map)
 
 # =============
 # Hierarchical Clustering
