@@ -7,8 +7,8 @@ run_kmeans_clustering <- function(cleaned_data) {
   library(plotly)
   
   # --- PCA, t-SNE, Utils ---
-  source("Modules/Analysis_PCA.R")
-  source("Modules/Analysis_tSNE.R")
+  source("Modules/Unsupervised/Analysis_PCA.R")
+  source("Modules/Unsupervised/Analysis_tSNE.R")
   source("Modules/Utils.R")
   
   pca_analysis_result <- run_pca_analysis(cleaned_data)

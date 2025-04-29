@@ -4,6 +4,7 @@
 data_cleaning_result <- source("Modules/Data_Cleaning.R", local = new.env())$value
 cleaned_data <- data_cleaning_result$cleaned_data
 cleaned_data_original <- cleaned_data
+data_numeric <- cleaned_data_original[, sapply(cleaned_data_original, is.numeric)]
 
 --------------------------------------------------------------------------------
   # UNSUPERVISED LEARNING: STATUS VARIABLE
@@ -11,34 +12,72 @@ cleaned_data_original <- cleaned_data
 # ==========
 # PCA
 # ==========
-source("Modules/Analysis_PCA.R")
+source("Modules/Unsupervised/Analysis_PCA.R")
 pca_analysis_result <- run_pca_analysis(cleaned_data_original)
 pca_loadings <- pca_analysis_result$loadings
 
 # ==========
 # t-SNE
 # ==========
-source("Modules/Analysis_tSNE.R")
+source("Modules/Unsupervised/Analysis_tSNE.R")
 tsne_analysis_result <- run_tsne_analysis(cleaned_data_original)
 tsne_result <- tsne_analysis_result$tsne_result
 
 # =============
 # K-Means Clustering
 # =============
-source("Modules/Clustering_KMeans.R")
+source("Modules/Unsupervised/Clustering_KMeans.R")
 source("Modules/Utils.R")
 kmeans_result <- run_kmeans_clustering(cleaned_data_original)
 
 pca_map <- generate_kmeans_map(kmeans_result$kmeans_data, method = "pca")
 tsne_map <- generate_kmeans_map(kmeans_result$kmeans_data, method = "tsne")
-print(pca_map)
-print(tsne_map)
+
+# Validation
+source("Modules/Unsupervised/Clustering_Validation.R")
+eval_pca <- evaluate_clustering(data_numeric, kmeans_result$kmeans_data$kcluster_pca)
+eval_tsne<- evaluate_clustering(data_numeric, kmeans_result$kmeans_data$kcluster_tsne)
 
 # =============
 # Hierarchical Clustering
 # =============
-source("Modules/Clustering_Hierarchical.R")
+source("Modules/Unsupervised/Clustering_Hierarchical.R")
 hierarchical_result <- run_hierarchical_clustering(cleaned_data_original)
+
+# Validation
+source("Modules/Unsupervised/Clustering_Validation.R")
+
+eval_ward <- evaluate_clustering(data_numeric, as.integer(as.character(hierarchical_result$hc_data$cluster_ward)))
+eval_avg  <- evaluate_clustering(data_numeric, as.integer(as.character(hierarchical_result$hc_data$cluster_avg)))
+eval_com  <- evaluate_clustering(data_numeric, as.integer(as.character(hierarchical_result$hc_data$cluster_com)))
+
+# =============
+# Clustering Evaluation
+# =============
+
+source("Modules/Unsupervised/Clustering_validation.R")
+
+results_list <- list(
+  eval_pca, 
+  eval_tsne, 
+  eval_avg, 
+  eval_com, 
+  eval_ward
+)
+
+method_names <- c(
+  "KMeans + PCA", 
+  "KMeans + t-SNE", 
+  "HC Average", 
+  "HC Complete", 
+  "HC Ward"
+)
+
+validation_plots <- plot_clustering_validation(results_list, method_names)
+
+print(validation_plots$silhouette_plot)
+print(validation_plots$db_plot)
+print(validation_plots$data)
 
 --------------------------------------------------------------------------------
   # SUPERVISED LEARNING: STATUS
@@ -48,6 +87,7 @@ hierarchical_result <- run_hierarchical_clustering(cleaned_data_original)
 # ===============
 source("Modules/Status_classification/Logistic_status.R")
 log_status <- run_status_logistic(cleaned_data)
+
 
 # Cross-Validation
 source("Modules/Status_classification/CrossValidation_Status.R")
