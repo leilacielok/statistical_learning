@@ -7,22 +7,20 @@ cleaned_data_original <- cleaned_data
 data_numeric <- cleaned_data_original[, sapply(cleaned_data_original, is.numeric)]
 
 --------------------------------------------------------------------------------
-  # UNSUPERVISED LEARNING: STATUS VARIABLE
+  # UNSUPERVISED LEARNING
 --------------------------------------------------------------------------------
 # ==========
 # PCA
 # ==========
 source("Modules/Unsupervised/Analysis_PCA.R")
 pca_analysis_result <- run_pca_analysis(cleaned_data_original)
-pca_loadings <- pca_analysis_result$loadings
 
 # ==========
 # t-SNE
 # ==========
 source("Modules/Unsupervised/Analysis_tSNE.R")
 tsne_analysis_result <- run_tsne_analysis(cleaned_data_original)
-tsne_result <- tsne_analysis_result$tsne_result
-
+tsne_analysis_result$plot$projection
 # =============
 # K-Means Clustering
 # =============

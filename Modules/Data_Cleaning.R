@@ -1,4 +1,5 @@
 library(plotly)
+library(ggplot2)
 library(dplyr)
 library(e1071)
 library(countrycode)
@@ -79,8 +80,9 @@ scaled_lifeexp <- cbind(
 # 6. Encode Status in a dummy
 scaled_lifeexp$Status <- ifelse(life_expectancy_dataset$Status == "Developed", 1, 0)
 
-# 7. Checking Status bilancement 
-prop.table(table(scaled_lifeexp$Status))
+# 7. Checking Status unbalance 
+status_prop <- prop.table(table(scaled_lifeexp$Status))
+status_df <- as.data.frame(status_prop)
 
 # 8. Handle multicollinearity: drop highly correlated variables
 corr_matrix <- cor(scaled_lifeexp[, -1])
@@ -97,7 +99,7 @@ life_expectancy_dataset <- scaled_lifeexp[, !(names(scaled_lifeexp) %in% vars_to
 
 world = ne_countries(scale = "medium", returnclass = "sf")
 
-# 9. Add the function to standardize country names
+# 9. Function to standardize country names
 standardize_country_names <- function(df, country_col = "Country") {
   df$Country_std <- countrycode(df[[country_col]],
                                 origin = "country.name",
@@ -156,6 +158,14 @@ if (plot_cleaning_graphs) {
     hist(life_expectancy_dataset[, i], main=names(life_expectancy_dataset)[i], col="lightblue")
   }
   par(mfrow=c(1,1))
+  
+  # Balance Status categories
+  colnames(status_df) <- c("Status", "Proportion")
+  ggplot(status_df, aes(x = Status, y = Proportion, fill = Status)) +
+    geom_col() +
+    labs(title = "Status Cateogries Proportion", y = "Proportion", x = "Status Class") +
+    scale_y_continuous(labels = scales::percent_format()) +
+    theme_minimal()
   
   # Correlation map
   heatmap.2(corr_matrix, 
