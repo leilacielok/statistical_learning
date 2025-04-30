@@ -48,7 +48,15 @@ compare_models_roc <- function(models, model_names) {
   for (i in seq_along(models)) {
     model <- models[[i]]
     probs <- model$pred
+    if (is.null(probs)) {
+      stop("Le probabilità di classe non sono disponibili.")
+    }
+    
     positive_class <- model$levels[2]
+    if (!positive_class %in% colnames(probs)) {
+      stop("La classe positiva non è presente nei dati di previsione.")
+    }
+    
     roc_obj <- roc(probs$obs, probs[[positive_class]])
     
     auc_values[i] <- round(auc(roc_obj), 3)
@@ -60,21 +68,18 @@ compare_models_roc <- function(models, model_names) {
   legend("bottomright", legend = model_names, col = colors[1:length(models)], lwd = 2)
 }
 
-  # Important variables comparison
-  important_vars_list <- lapply(models, function(model) {
-    if (!is.null(model$important_vars) && nrow(model$important_vars) > 0) {
-      return(model$important_vars)
-    } else {
-      return(NULL)
-    }
-  })
   
-compare_models_vars <- function(models, model_names) {
+compare_models_vars <- function(models, model_names, top_n = 8) {
   library(ggplot2)
+  library(dplyr)
   
-  important_vars_list <- lapply(models, function(model) {
+  important_vars_list <- lapply(seq_along(models), function(i) {
+    model <- models[[i]]
     if (!is.null(model$important_vars) && nrow(model$important_vars) > 0) {
-      model$important_vars$Model <- model_names[which(models == model)]  # Aggiungi il nome del modello
+      model$important_vars$Model <- model_names[i]
+      model$important_vars <- model$important_vars %>%
+        arrange(desc(abs(Coefficient))) %>%
+        slice_head(n = top_n)
       return(model$important_vars)
     } else {
       return(NULL)
@@ -83,14 +88,14 @@ compare_models_vars <- function(models, model_names) {
   
   important_vars_df <- do.call(rbind, important_vars_list)
   
-  if (nrow(important_vars_df) > 0) {
+  if (!is.null(important_vars_df) && nrow(important_vars_df) > 0) {
     ggplot(important_vars_df, aes(x = reorder(Feature, Coefficient), y = Coefficient, fill = Model)) +
       geom_bar(stat = "identity", position = "dodge") +
       coord_flip() +
       theme_minimal() +
       xlab("Feature") +
       ylab("Importance Coefficient") +
-      ggtitle("Comparing Variable Importance Across Models") +
+      ggtitle(paste("Most Important Variables per Model")) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   } else {
     print("No important variables found for the models.")
