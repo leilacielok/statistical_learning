@@ -46,7 +46,6 @@ hierarchical_result <- run_hierarchical_clustering(cleaned_data_original)
 
 # Validation
 source("Modules/Unsupervised/Clustering_Validation.R")
-
 eval_ward <- evaluate_clustering(data_numeric, as.integer(as.character(hierarchical_result$hc_data$cluster_ward)))
 eval_avg  <- evaluate_clustering(data_numeric, as.integer(as.character(hierarchical_result$hc_data$cluster_avg)))
 eval_com  <- evaluate_clustering(data_numeric, as.integer(as.character(hierarchical_result$hc_data$cluster_com)))
@@ -75,10 +74,6 @@ method_names <- c(
 
 validation_plots <- plot_clustering_validation(results_list, method_names)
 
-print(validation_plots$silhouette_plot)
-print(validation_plots$db_plot)
-print(validation_plots$data)
-
 --------------------------------------------------------------------------------
   # SUPERVISED LEARNING: STATUS
 --------------------------------------------------------------------------------
@@ -86,13 +81,16 @@ print(validation_plots$data)
 # Logistic Regression
 # ===============
 source("Modules/Status_classification/Logistic_status.R")
-log_status <- run_status_logistic(cleaned_data)
-
+log_status <- run_status_logistic(cleaned_data_original)
+log_status$confusion
+log_status$model
+log_status$important_vars
+log_status$roc_obj
 
 # Cross-Validation
 source("Modules/Status_classification/CrossValidation_Status.R")
 logit_status_cv <- cross_validate_model(
-  data = cleaned_data,
+  data = cleaned_data_original,
   method = "glmnet",
   tune_grid = expand.grid(alpha = 1, lambda = seq(0.001, 0.1, length = 10))
 )
@@ -101,12 +99,13 @@ logit_status_cv <- cross_validate_model(
 # Decision Tree
 # ===============
 source("Modules/Status_classification/DT_status.R")
-tree_status <- run_status_tree(cleaned_data)
+tree_status <- run_status_tree(cleaned_data_original)
 rpart.plot(tree_status$model$finalModel)
+
 
 # Cross-Validation
 tree_status_cv <- cross_validate_model(
-  data = cleaned_data,
+  data = cleaned_data_original,
   method = "rpart"
 )
 
@@ -114,11 +113,11 @@ tree_status_cv <- cross_validate_model(
 # Random Forest
 # ===============
 source("Modules/Status_classification/RF_status.R")
-rf_status <- run_status_rf(cleaned_data)
+rf_status <- run_status_rf(cleaned_data_original)
 
 # Cross-Validation
 rf_status_cv <- cross_validate_model(
-  data = cleaned_data,
+  data = cleaned_data_original,
   method = "rf"
 )
 
@@ -130,6 +129,7 @@ models_list_status <- list(logit_status_cv, tree_status_cv, rf_status_cv)
 model_names_status <- c("Logistic Regression", "Decision Tree", "Random Forest")
 
 compare_models_roc(models_list_status, model_names_status)
+compare_models_vars(list(rf_status, tree_status, log_status), c("Random Forest", "Decision Tree", "Logistic Regression"))
 
 --------------------------------------------------------------------------------
   # SUPERVISED LEARNING: LIFE EXPECTANCY 

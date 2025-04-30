@@ -10,6 +10,9 @@ run_status_rf <- function(cleaned_data) {
   train_data$Status <- factor(train_data$Status, levels = c(0, 1), labels = c("Class0", "Class1"))
   test_data$Status <- factor(test_data$Status, levels = c(0, 1), labels = c("Class0", "Class1"))
   
+  train_data <- train_data %>% select(-Country_std)
+  test_data <- test_data %>% select(-Country_std)
+  
   ctrl <- trainControl(
     method = "cv", 
     number = 10, 
