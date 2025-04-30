@@ -10,6 +10,8 @@ run_lifeexp_rfreg <- function(data) {
   train_data <- data[trainIndex, ]
   test_data <- data[-trainIndex, ]
   
+  train_data <- train_data %>% select(-any_of(c("Country", "Country_std")))
+  test_data  <- test_data %>% select(-any_of(c("Country", "Country_std")))
   
   set.seed(123)
   model <- randomForest(

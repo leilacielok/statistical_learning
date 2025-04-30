@@ -138,7 +138,7 @@ compare_models_vars(list(rf_status, tree_status, log_status), c("Random Forest",
 # Logistic
 # ===============
 source("Modules/LifeExp_classification/Logistic_lifeexp.R")
-log_lifeexp <- run_lifeexp_logistic(cleaned_data)
+log_lifeexp <- run_lifeexp_logistic(cleaned_data_original)
 
 # Cross-Validation
 source("Modules/LifeExp_classification/CrossValidation_Lifeexp.R")
@@ -164,36 +164,35 @@ tree_lifeexp_cv <- cross_validate_model(
 # ===============
 # Classification
 source("Modules/LifeExp_classification/RF_lifeexp.R")
-rf_lifeexp <- run_lifeexp_rf(cleaned_data)
+rf_lifeexp <- run_lifeexp_rf(cleaned_data_original)
 
 rf_lifeexp_cv <- cross_validate_model(
-  data = cleaned_data,
+  data = cleaned_data_original,
   method = "rf"
 )
 
 # RF Regression
 source("Modules/LifeExp_regression/RFReg_lifeexp.R")
-rfreg_lifeexp <- run_lifeexp_rfreg(cleaned_data)
+rfreg_lifeexp <- run_lifeexp_rfreg(cleaned_data_original)
 
 # ===============
 # Linear Regression
 # ===============
 source("Modules/LifeExp_regression/LinReg_lifeexp.R")
-linreg_lifeexp <- run_lifeexp_linreg(cleaned_data)
+linreg_lifeexp <- run_lifeexp_linreg(cleaned_data_original)
 
 # ===============
 # Ridge Regression
 # ===============
 source("Modules/LifeExp_regression/RidgeReg_lifeexp.R")
-ridge_lifeexp <- run_lifeexp_ridge(cleaned_data)
-plot_ridge_predictions(ridge_lifeexp$ridge_model, cleaned_data)
+ridge_lifeexp <- run_lifeexp_ridge(cleaned_data_original)
+plot_ridge_predictions(ridge_lifeexp$ridge_model, cleaned_data_original)
 
 # ===============
 # SVM Regression
 # ===============
 source("Modules/LifeExp_regression/SVMReg_lifeexp.R")
-svm_lifeexp <- run_lifeexp_svm(cleaned_data)
-svm_lifeexp$imp_plot
+svm_lifeexp <- run_lifeexp_svm(cleaned_data_original)
 
 # ===============
 # ROC: classification models comparison
@@ -206,11 +205,6 @@ compare_models_multiclass(models_list_lifeexp, model_names_lifeexp)
 # ===============
 # RMSE and R2: regression models comparison
 # ===============
-linreg_lifeexp <- run_lifeexp_linreg(cleaned_data)
-ridge_lifeexp <- run_lifeexp_ridge(cleaned_data)
-svm_lifeexp <- run_lifeexp_svm(cleaned_data)
-rfreg_lifeexp <- run_lifeexp_rfreg(cleaned_data)
-
 source("Modules/LifeExp_regression/Regressions_Comparison.R")
 results_comparison <- compare_regression_models(
   linreg_lifeexp, 

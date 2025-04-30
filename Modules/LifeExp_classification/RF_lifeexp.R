@@ -9,6 +9,9 @@ run_lifeexp_rf <- function(cleaned_data) {
   train_data <- data_split$train
   test_data <- data_split$test
   
+  train_data <- train_data %>% select(-any_of(c("Country", "Country_std")))
+  test_data  <- test_data %>% select(-any_of(c("Country", "Country_std")))
+  
   model <- randomForest(lifeexp_cat ~ ., data = train_data, ntree = 100, importance = TRUE)
   pred <- predict(model, newdata = test_data)
   pred <- factor(pred, levels = levels(test_data$lifeexp_cat))

@@ -2,7 +2,7 @@ run_lifeexp_ridge <- function(data) {
   library(glmnet)
   library(ggplot2)
   
-  x <- model.matrix(life_expectancy ~ . - Country, data = data)[, -1]
+  x <- model.matrix(life_expectancy ~ . - Country -Country_std, data = data)[, -1]
   y <- data$life_expectancy
   
   ridge_model <- cv.glmnet(x, y, alpha = 0)
@@ -42,7 +42,7 @@ run_lifeexp_ridge <- function(data) {
     
   # Visualization
   importance_plot_ridge <- ggplot(coefficients_ridge_df, aes(x = reorder(Feature, abs_coefficient), y = abs_coefficient)) +
-    geom_col(fill = "lightgreen") +
+    geom_col(fill = "skyblue") +
     coord_flip() +
     ggtitle("Ridge Regression: Feature Importance") +
     xlab("Features") +
@@ -62,7 +62,7 @@ run_lifeexp_ridge <- function(data) {
 plot_ridge_predictions <- function(ridge_model, data) {
   library(glmnet)
   
-  x <- model.matrix(life_expectancy ~ . - Country, data = data)[, -1]
+  x <- model.matrix(life_expectancy ~ . - Country -Country_std, data = data)[, -1]
   y <- data$life_expectancy
   
   preds_min <- predict(ridge_model, s = "lambda.min", newx = x)
@@ -74,15 +74,15 @@ plot_ridge_predictions <- function(ridge_model, data) {
   plot(y, preds_min,
        main = "Predicted vs Observed (lambda.min)",
        xlab = "Observed Values", ylab = "Predicted Values",
-       pch = 19, col = "blue")
-  abline(0, 1, col = "red", lwd = 2)
+       pch = 19, col = "lightgreen")
+  abline(0, 1, col = "blue", lwd = 2)
   
   # Plot lambda.1se
   plot(y, preds_1se,
        main = "Predicted vs Observed (lambda.1se)",
        xlab = "Observed Values", ylab = "Predicted Values",
-       pch = 19, col = "green")
-  abline(0, 1, col = "red", lwd = 2)
+       pch = 19, col = "lightgreen")
+  abline(0, 1, col = "blue", lwd = 2)
   
   par(mfrow = c(1, 1))
   

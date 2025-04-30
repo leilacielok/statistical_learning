@@ -2,7 +2,7 @@ run_lifeexp_svm <- function(data) {
   library(caret)
   library(ggplot2)
   
-  data <- data[, colnames(data) != "Country"]
+  data <- data[, !(colnames(data) %in% c("Country", "Country_std"))]
   
   train_control <- trainControl(method = "none")
   
@@ -22,8 +22,8 @@ run_lifeexp_svm <- function(data) {
   cat("R²: ", r_squared, "\n")
   
   p1 <- ggplot(data = data.frame(Observed = data$life_expectancy, Predicted = preds), aes(x = Observed, y = Predicted)) +
-    geom_point(color = "darkgreen", size = 2) +
-    geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", linewidth = 1) +
+    geom_point(color = "lightgreen", size = 2) +
+    geom_abline(intercept = 0, slope = 1, color = "blue", linetype = "dashed", linewidth = 1) +
     ggtitle("SVM Regression: Predicted vs Observed") +
     xlab("Observed Values") +
     ylab("Predicted Values") +

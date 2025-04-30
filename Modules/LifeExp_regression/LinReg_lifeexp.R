@@ -3,7 +3,7 @@ run_lifeexp_linreg <- function(data) {
   library(ggplot2)
   
   target_var <- "life_expectancy"
-  predictors <- setdiff(names(data), c(target_var, "Country"))
+  predictors <- setdiff(names(data), c(target_var, "Country", "Country_std"))
   
   formula <- as.formula(paste(target_var, "~", paste(predictors, collapse = " + ")))
   
